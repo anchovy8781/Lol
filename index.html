@@ -178,6 +178,8 @@ td.r,th.r{text-align:right}
 @media (prefers-reduced-motion:reduce){.cele{display:none}}
 .cele-h{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,7vw,56px);color:var(--accent)}
 .mentor{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface))}
+.ap{border:1px dashed var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px}
+.ap.on{border-style:solid;border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface))}
 .board td{font-size:13px}
 .linkish{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}.linkish:hover{text-decoration:underline}.board tr.sel td{background:var(--sunk)}
 .post{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
@@ -1357,6 +1359,75 @@ function showLC(d){
   at(7000,()=>{verdict();liveFinish()});bindLive(final);
 }
 
+
+/* ============ AI 자동 플레이 ============ */
+const AISTYLE={safe:{n:'안정형',ad:0.02,hireRw:12,raiseRw:14,bulk:0.2},bal:{n:'균형형',ad:0.03,hireRw:9,raiseRw:12,bulk:0.15},aggr:{n:'공격형',ad:0.06,hireRw:6,raiseRw:10,bulk:0.08}};
+const AP={on:false,timer:null,months:0,startCash:0,speed:500,style:'bal',stop:true,msg:''};
+function aiPlan(style){
+  const Y=AISTYLE[style||AP.style],I=ind(),A=s.alloc,launched=s.quality>=I.mvp,F=s.F,rw=runway();
+  for(const k in A)A[k]=0;let b=blocksAvail();const give=(k,n)=>{n=Math.min(n,b);A[k]+=n;b-=n};
+  if(F.energy<40)give('rest',3);else if(F.energy<60)give('rest',1);
+  if(s.fund&&!s.fund.offers&&!s.fund.dd)give('ir',3);
+  const cal=calM(s.month);
+  if((s.gov.chogi==='none'||s.gov.chogi==='fail')&&(cal===2||cal===3)&&s.month<36){s.gov.chogi='apply';give('gov',2)}
+  else if(s.gov.kibo==='none'&&s.month>=6&&s.quality>=30&&!s.loans.length){s.gov.kibo='apply';give('gov',1)}
+  else if(s.tipsOK&&s.gov.tips==='none'){s.gov.tips='apply';give('gov',2)}
+  if(!launched&&F.dev>40)give('dev',4);
+  give('interview',launched?1:2);if(s.team.length>3)give('manage',1);if(launched&&F.dev>40)give('dev',1);give('recruit',1);give('sales',b);
+  return {Y,launched,rw};
+}
+function aiManage(){
+  const {Y,launched,rw}=aiPlan();const F=s.F,I=ind();
+  if(launched){const bud=Math.max(0,Math.min(s.cash*Y.ad,lastRev()*0.4+3e6));const f=CHFIT[s.ind];const tot=Object.values(f).reduce((a,x)=>a+x*x,0);for(const k in f)s.ch[k]=Math.round(bud*f[k]*f[k]/tot/1e5)*1e5}
+  else{for(const k in s.ch)s.ch[k]=0;s.ch.content=Math.round(Math.min(2e6,Math.max(0,s.cash)*0.01)/1e5)*1e5}
+  if(!s.fund&&!s.pub&&rw<Y.raiseRw&&stageIdx()<6){startRound(stageIdx()+1);aiLog(`${ROUNDS[s.fund.i].name} 라운드 시작`)}
+  if(s.fund&&s.fund.offers){let bi=0;s.fund.offers.forEach((o,i)=>{if(o.pre>s.fund.offers[bi].pre)bi=i});aiLog(`${s.fund.offers[bi].vc} 텀시트 서명`);acceptOffer(bi)}
+  const devs=byRole('dev').length+(F.dev>40?1:0);
+  const want=r=>{if(r==='dev')return devs<(launched?3:2)+Math.floor(s.team.length/5);if(r==='cs')return strain()>0.05||(s.users>I.csBase*1.5&&byRole('cs').length<2);if(r==='sales')return launched&&byRole('sales').length<1+Math.floor(s.team.length/6);if(r==='mkt')return launched&&byRole('mkt').length<1&&s.team.length>=3;if(r==='qa')return s.mfg&&byRole('qa').length<1+(s.mfg.lines>1?1:0);if(r==='ops')return orgSize()>adminCap()-2;if(r==='design')return devs>=2&&byRole('design').length<1;if(r==='pm')return devs>=4&&byRole('pm').length<1;if(r==='data')return s.team.length>=8&&byRole('data').length<1;return false};
+  for(const c of [...s.cands]){if(!want(c.role))continue;const after=(s.cash)/((payroll()+c.ask/12)*1.25+chSum()+officeCost()+1);if(after<Y.hireRw&&rw!==Infinity)continue;
+    s.cands=s.cands.filter(x=>x!==c);const p=offerChance(c,1.05,false);if(R()<p){s.team.push({id:c.id,name:c.name,role:c.role,lv:c.lv,skill:c.skill,salary:Math.round(c.ask*1.05),morale:70,ten:0,ramp:0,opt:0,trait:c.trait||'none',mil:c.mil||0,leave:0});aiLog(`${ROLES[c.role].name} ${c.name} 채용`)}}
+  if(strain()>Y.bulk&&(orgSize()>=15||stageIdx()>=3||s.pub)&&rw>12){const r=strain()>0.4?'cs':pick(['cs','sales','dev','ops']);const mk=ROLES[r].mk[1]*1e4;for(let i=0;i<5;i++)s.team.push({id:s.nextId++,name:pickName(),role:r,lv:1,skill:ri(42,66),salary:Math.round(mk/1e6)*1e6,morale:66,ten:0,ramp:0,opt:0,trait:pick(TRAITS).k,mil:0,leave:0});s.cash-=2.5e7;aiLog(`${ROLES[r].name} 5명 대량 채용`)}
+  if(launched&&!s.road.cur){const nx=FEATS[s.ind].find(f=>!s.road.done.includes(f.k)&&!(f.q&&s.quality<f.q));if(nx){s.road.cur=nx.k;s.road.prog=0}}
+  s.focus=s.debt>55?'stable':s.debt<25&&launched?'feature':'balance';
+  if(launched&&s.users>=50&&!(s.exp&&s.exp.cur)&&rw>8){const X=s.exp||{done:{},tries:{}};const e=EXPS.find(e=>!X.done[e.k]&&!(X.tries[e.k]>s.month-3));if(e)runExp(e.k)}
+  if(launched&&s.month>=20&&s.pmf<26&&!s.pivots&&s.users>=pmfN()){s.pivots++;s.quality*=0.4;s.users*=0.25;s.pmf*=0.3;s.fit=clamp(rnd(0.4,1)+0.04,0.3,1);aiLog('PMF가 오르지 않아 피벗 결정')}
+  if(s.mfg){const M=s.mfg;if(M.cert.iatf==='none'&&!M.certLeft.iatf&&s.quality>=50&&s.cash>2e8){s.cash-=8e7;M.certLeft.iatf=6;aiLog('IATF 16949 인증 신청')}
+    const L=s.last&&s.last.mf;if(M.site==='none'&&s.users>=5&&s.cash>8e8){s.cash-=2.3e8;M.site='rent';aiLog('임차 공장 확보');if(s.gov.jjg==='none')s.gov.jjg='apply'}
+    if(M.site!=='none'&&L&&L.demand>L.cap*0.85&&M.lines+M.building.length<SITES[M.site].lines&&s.cash>LINE.capex*1.2){s.cash-=LINE.capex*0.4;M.building.push({left:LINE.build});aiLog('생산라인 착공')}
+    if(M.workers<M.lines*LINE.crew){const n=M.lines*LINE.crew-M.workers;M.workers+=n;s.cash-=n*5e5}}
+  {const tgt=s.pub?1.2e7:rw>18&&lastRev()>3e7?6e6:rw>12&&lastRev()>0?3.5e6:s.wealth<1e7?2.5e6:0;if(Math.abs(s.F.salary-tgt)>1){if(tgt>s.F.salary||rw<6){s.F.salary=tgt;aiLog(`대표 급여 월 ${won(tgt)}로 조정`)}}}
+  if(s.team.length>=4&&!s.autoRec)s.autoRec='din';
+  if(s.team.length>=6&&(!s.bonus||s.bonus.cycle==='none')&&s.last&&s.last.op>0)s.bonus={cycle:'h',type:'ps',rate:0.1};
+  const cl=s.certs;if(cl.lab==='none'&&s.team.filter(e=>e.role==='dev'||e.role==='data').length>=2){s.cash-=5e5;s.certLeft2.lab=1;cl.lab='review'}
+  if(cl.venture==='none'&&(s.rounds.reduce((a,r)=>a+r.amt,0)>=5e7||s.gov.kibo==='done')){s.cash-=3e5;s.certLeft2.venture=1;cl.venture='review'}
+  if(s.ind!=='mfg'&&cl.isms==='none'&&ismsReq()&&s.cash>3e8){s.cash-=1.5e8;s.certLeft2.isms=6;cl.isms='review'}
+  if(!s.ipo&&!s.pub){const q=ipoReq();if(!q.retry){if(q.gen){startIPO('gen');aiLog('일반 상장 준비 착수')}else if(q.tech){startIPO('tech');aiLog('기술특례 상장 준비 착수')}}}
+}
+function aiLog(t){addLog('[AI] '+t)}
+function aiChoose(ev){
+  const C=ev.choices;
+  if(ev.crisis){const i=C.findIndex(c=>!/폐업|애크하이어/.test(c.t));return i<0?0:i}
+  if(/인수를 제안/.test(ev.title))return 1;
+  if(ev.eb==='대표 레벨 업'){const F=s.F;return F.energy<50?3:F.dev>=F.sales&&F.dev>40?0:1}
+  if(ev.eb==='연봉 협상 시즌'||/연봉 협상/.test(ev.eb))return runway()<9?1:2;
+  if(C.length>1&&runway()<8){let bi=0,best=1e18;C.forEach((c,i)=>{const m=(c.d||'').match(/([0-9.,]+)(억|만)/);const v=m?parseFloat(m[1].replace(/,/g,''))*(m[2]==='억'?1e8:1e4):0;if(v<best){best=v;bi=i}});return bi}
+  return 0}
+function isBig(ev){return ev.live==='ipoShow'||ev.crisis||(ev.title&&/인수를 제안/.test(ev.title))}
+function apStart(){if(AP.on||!s||s.ended)return;AP.on=true;AP.months=0;AP.startCash=s.cash;AP.startM=s.month;AP.msg='';render();apTick()}
+function apStop(msg){AP.on=false;clearTimeout(AP.timer);AP.msg=msg||'';if(s&&!s.ended)save();render()}
+function apTick(){
+  if(!AP.on)return;if(!s||s.ended){apStop();render();return}
+  aiManage();const res=simulate();sanitize();AP.months++;
+  const notes=res.notes;let pauseAt=-1;
+  for(let i=0;i<s.pending.length;i++){const ev=s.pending[i];if(AP.stop&&isBig(ev)){pauseAt=i;break}
+    if(ev.live)continue;const c=ev.choices[Math.min(aiChoose(ev),ev.choices.length-1)];const msg=c.f();sanitize();addLog(`[AI] ${ev.title} → ${c.t}${msg?': '+msg:''}`,s.month-1);if(s.ended)break;
+    if(ev.crisis&&s.cash<0&&!s.ended){s.pending.splice(i+1,0,EV_CRISIS())}}
+  if(s.ended){AP.on=false;render();return}
+  if(pauseAt>=0){s.pending=s.pending.slice(pauseAt);AP.on=false;AP.msg='중요한 결정이 필요해 자동 플레이를 멈췄습니다.';save();res.months=1;showReport(res);return}
+  s.pending=[];save();render();
+  AP.timer=setTimeout(apTick,AP.speed);
+}
+
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
   if(s.ended)return;
@@ -1822,8 +1893,16 @@ function plan(){
    ${meter('대표 체력',F.energy,100,F.energy<30?'bad':F.energy<50?'warn':'')}
    <div class="row between note"><span>대표 개인 자산 (생활비 월 250만)</span><b class="mono ${s.wealth<0?'bad':''}">${won(s.wealth)}</b></div>
    <p class="note">예상 지출 약 <b class="mono">${won(est)}</b> (매출원가·세금 제외)</p>
-   <button class="btn primary" data-act="next" style="padding:12px">${calM(s.month)}월 마감하고 다음 달로 →</button>
-   <div class="row"><button class="btn sm" data-auto="3" style="flex:1">3개월 자동 진행</button><button class="btn sm" data-auto="12" style="flex:1">1년 자동 진행</button></div>
+   <div class="ap ${AP.on?'on':''}"><div class="row between"><b>AI 자동 플레이</b>${AP.on?`<span class="chip acc">진행 중 · ${AP.months}개월</span>`:''}</div>
+    <div class="row"><select id="apStyle" style="width:auto" ${AP.on?'disabled':''}>${Object.entries(AISTYLE).map(([k,v])=>`<option value="${k}" ${AP.style===k?'selected':''}>${v.n}</option>`).join('')}</select>
+     <select id="apSpeed" style="width:auto">${[[1200,'느리게'],[500,'보통'],[150,'빠르게'],[0,'최고속']].map(([v,n])=>`<option value="${v}" ${AP.speed==v?'selected':''}>${n}</option>`).join('')}</select></div>
+    <label class="row note"><input type="checkbox" id="apStopBig" ${AP.stop?'checked':''}> 위기·인수 제안·상장 순간에는 멈추고 내가 결정</label>
+    ${AP.on?`<button class="btn danger" data-act="apStop">자동 플레이 정지</button>`:`<div class="row"><button class="btn" data-act="apStart" style="flex:1">자동 플레이 시작</button><button class="btn sm" data-act="aiPlan">이번 달만 AI 추천</button></div>`}
+    ${AP.msg?`<p class="note warn">${esc(AP.msg)}</p>`:''}
+    ${!AP.on&&AP.months?`<p class="note">지난 자동 플레이: ${AP.months}개월, 현금 ${won(AP.startCash)} → ${won(s.cash)}. 기록 탭에서 [AI] 결정 내역을 볼 수 있습니다.</p>`:''}
+    <p class="note">AI가 시간표·마케팅·채용·투자·지원사업·인증·이벤트 선택을 대신합니다. 안정형은 아끼고, 공격형은 크게 쓰며 키웁니다.</p></div>
+   <button class="btn primary" data-act="next" style="padding:12px" ${AP.on?'disabled':''}>${calM(s.month)}월 마감하고 다음 달로 →</button>
+   <div class="row"><button class="btn sm" data-auto="3" style="flex:1" ${AP.on?'disabled':''}>3개월 자동 진행</button><button class="btn sm" data-auto="12" style="flex:1" ${AP.on?'disabled':''}>1년 자동 진행</button></div>
    <p class="note">자동 진행은 같은 시간표로 진행하다가 결정할 일이 생기면 멈춥니다.</p>
    <div class="row between"><button class="btn sm" data-act="theme">테마 전환</button>${ui.confirm==='quit'?`<button class="btn sm danger" data-act="quitYes">정말 청산</button>`:`<button class="btn sm" data-act="quit">회사 청산</button>`}</div>
   </div>`}
@@ -1953,8 +2032,11 @@ app.addEventListener('click',e=>{
   const a=d.act;
   if(a==='start'){const S=ui.setup;S.name=(document.getElementById('fname').value||'').trim();S.co=(document.getElementById('coname').value||'').trim();S.vest=document.getElementById('vest').checked;newGame(S);ui.tab='dash';render();window.scrollTo(0,0);return}
   if(a==='continue'){s=load();render();return}
-  if(a==='restart'){s=null;ui.setup.carry=null;render();window.scrollTo(0,0);return}
-  if(a==='next'){ui.confirm=null;const res=simulate();sanitize();if(!s.ended)save();showReport(res);return}
+  if(a==='restart'){apStop();s=null;ui.setup.carry=null;render();window.scrollTo(0,0);return}
+  if(a==='apStart'){apStart();return}
+  if(a==='apStop'){apStop('정지했습니다.');return}
+  if(a==='aiPlan'){aiManage();toast('AI 추천을 이번 달 계획에 적용했습니다.','good');render();return}
+  if(a==='next'){if(AP.on)return;ui.confirm=null;const res=simulate();sanitize();if(!s.ended)save();showReport(res);return}
   if(a==='move'){const k=document.getElementById('office').value;if(k===s.office)return;const o=OFFICES[k];
     if(o.apply){s.gov.center='apply';toast('입주 신청서를 냈습니다. 다음 달 결과가 나옵니다.');render();return}
     s.cash+=s.deposit;s.deposit=o.deposit;s.cash-=o.deposit+o.move;s.office=k;addLog(`${o.name}(으)로 이전. 보증금 ${won(o.deposit)}, 이전·인테리어 ${won(o.move)}.`);render();return}
@@ -1988,6 +2070,9 @@ app.addEventListener('change',e=>{
   if(t.id==='oem'){s.mfg.oem=t.checked;render()}
   if(t.id==='factor'){s.mfg.factor=t.checked;render()}
   if(t.id==='rfocus'){s.recruitFocus=t.value}
+  if(t.id==='apStyle')AP.style=t.value;
+  if(t.id==='apSpeed')AP.speed=+t.value;
+  if(t.id==='apStopBig')AP.stop=t.checked;
   if(t.id==='bonusCycle'||t.id==='bonusType'){s.bonus=s.bonus||{cycle:'none',type:'fixed',rate:0.1};if(t.id==='bonusCycle')s.bonus.cycle=t.value;else{s.bonus.type=t.value;s.bonus.rate=t.value==='ps'?0.1:0.1}render()}
   if(t.id==='autoRec'){s.autoRec=t.value;addLog(`자동 레크리에이션 정책 변경: ${t.selectedOptions[0].textContent}`);render()}
   if(t.id==='bonusRate')render();
