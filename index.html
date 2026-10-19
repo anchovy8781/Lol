@@ -396,7 +396,9 @@ const pow=r=>byRole(r).reduce((a,e)=>a+eff(e),0);
 const officeCost=()=>{const o=OFFICES[s.office];return (o.fixed+o.per*(headcount()+1))*(s.rentMul||1)};
 function payroll(){return s.team.reduce((a,e)=>a+(e.leave>0?0:e.salary/12),0)+s.F.salary+(s.mfg?s.mfg.workers*s.mfg.wage/12:0)}
 function adminCap(){return 7+byRole('ops').length*14}
-function blocksAvail(){let b=8;const over=orgSize()-adminCap();if(over>0)b-=Math.ceil(over/6);if(s.F.energy<20)b-=2;if(s.flags.forcedRest)b=3;if(s.flags.leave>0)b=2;return Math.max(1,b)}
+function teamBonus(){const n=orgSize();let b=n>=200?4:n>=80?3:n>=30?2:n>=10?1:0;if(s.team.some(e=>!e.leave&&e.lv>=3&&(e.role==='ops'||e.role==='pm'))||s.team.some(e=>e.cof))b+=1;return b}
+function maxBlocks(){return 8+teamBonus()}
+function blocksAvail(){let b=maxBlocks();const over=orgSize()-adminCap();if(over>0)b-=Math.ceil(over/6);if(s.F.energy<20)b-=2;if(s.flags.forcedRest)b=3;if(s.flags.leave>0)b=2;return Math.max(1,b)}
 function allocTotal(){return Object.values(s.alloc).reduce((a,b)=>a+b,0)}
 function priceRatio(){return s.price/ind().base}
 function revenueHist(n){return s.hist.slice(-n).map(h=>h.rev)}
@@ -640,7 +642,7 @@ function simulate(){
   if(s.crunch)s.crunchM++;else s.crunchM=0;
   // ---- 창업자 ----
   const work=allocTotal()-A.rest;
-  let dE=27+(F.er||0)-4.9*work+9*A.rest-(rw<3?6:0)-(s.crunch?3:0)-(orgSize()>adminCap()?3:0)-(s.F.salary<2e6&&m>12?2:0)-(s.flags.personalDebt?2:0);
+  let dE=27+(F.er||0)-4.9*8/maxBlocks()*work+9*A.rest-(rw<3?6:0)-(s.crunch?3:0)-(orgSize()>adminCap()?3:0)-(s.F.salary<2e6&&m>12?2:0)-(s.flags.personalDebt?2:0);
   if(s.flags.forcedRest){dE+=30;s.flags.forcedRest=0}
   if(s.flags.leave>0){dE+=25;s.flags.leave--}
   s.wealth+=F.salary*0.82-2.5e6;if(s.flags.apt)dE+=2;
@@ -1882,10 +1884,11 @@ function plan(){
   const est=payroll()*1.105+officeCost()+(ind().serverBase+s.users*ind().serverPer)+(headcount()+1)*280000+250000+chSum()+(s.mfg?SITES[s.mfg.site].fixed:0)+MARKETS.reduce((a,mk)=>a+(s.markets[mk.k]?mk.mo:0),0);
   return `<div class="panel">
    <div class="row between"><h2>이번 달 시간표</h2><span class="mono">${used}/${av}</span></div>
-   <div class="blocks" aria-hidden="true">${Array.from({length:8},(_,i)=>`<i class="${i<used?'on':''}" style="${i>=av?'opacity:.25':''}"></i>`).join('')}</div>
+   <div class="blocks" aria-hidden="true">${Array.from({length:maxBlocks()},(_,i)=>`<i class="${i<used?'on':''}" style="${i>=av?'opacity:.25':''}"></i>`).join('')}</div>
    ${(()=>{const t0=mentorTips()[0];return t0?`<div class="callout good" style="font-size:12.5px"><b>멘토</b> ${esc(t0.t)}</div>`:''})()}
    ${s.goal?`<div class="callout" style="font-size:12.5px">분기 목표: <b>${esc(s.goal.txt)}</b></div>`:''}
-   ${av<8?`<p class="note warn">${s.flags.leave>0?`요양 중 (${s.flags.leave}개월 남음): 2칸만 사용 가능`:s.flags.forcedRest?'휴식 중: 3칸만 사용 가능':F.energy<20?'체력 부족으로 시간 감소':'조직 관리 부담으로 시간 감소'}</p>`:''}
+   ${teamBonus()?`<p class="note good">팀 규모 보너스 +${teamBonus()}칸 (업무 위임)</p>`:`<p class="note">직원 10·30·80·200명, 리드급 PM·경영지원 또는 공동창업자가 있으면 시간표가 늘어납니다.</p>`}
+   ${av<maxBlocks()?`<p class="note warn">${s.flags.leave>0?`요양 중 (${s.flags.leave}개월 남음): 2칸만 사용 가능`:s.flags.forcedRest?'휴식 중: 3칸만 사용 가능':F.energy<20?'체력 부족으로 시간 감소':'조직 관리 부담으로 시간 감소'}</p>`:''}
    <div>${ACTS.map(a=>`<div class="act"><span class="n">${a.n}</span><span class="d">${a.d}${a.k==='dev'?` (개발역량 ${F.dev})`:a.k==='sales'?` (영업역량 ${F.sales})`:a.k==='ir'?` (네트워크 ${F.network})`:''}</span>
      <div class="stepper"><button data-dec="${a.k}" aria-label="${a.n} 줄이기">−</button><b>${A[a.k]}</b><button data-inc="${a.k}" aria-label="${a.n} 늘리기">+</button></div></div>`).join('')}</div>
    <div class="row between"><span><b>${esc(s.fname)}</b> <span class="chip acc">Lv.${lvOf(F.xp)} ${titleOf(lvOf(F.xp))}</span></span><span class="note mono">개발 ${F.dev} · 영업 ${F.sales} · 인맥 ${F.network}</span></div>
