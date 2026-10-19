@@ -219,7 +219,7 @@ const IND={
     note:'영업 주도 성장. 고객 1곳 획득에 수백만 원이 들지만 이탈이 낮고 객단가가 높습니다. 대표의 직접 영업이 초기 성패를 가릅니다.'},
   app:{name:'B2C 구독 앱',ex:'AI 영어 회화 학습 앱',unit:'MAU',unitS:'명',base:12900,priceLabel:'월 구독료',payConv:0.075,churn:0.1,cac:2600,viral:0.1,tam:4200000,serverBase:300000,serverPer:55,csBase:6000,csPer:45000,mvp:42,valMul:0.75,storeFee:0.2,
     note:'MAU 중 일부만 유료 전환됩니다. 앱마켓 수수료(평균 20%)와 높은 이탈률이 숙제입니다. 퍼포먼스 마케팅과 바이럴이 핵심.'},
-  commerce:{name:'D2C 커머스',ex:'저당 간편식 자사몰',unit:'월 구매고객',unitS:'명',base:36000,priceLabel:'평균 객단가(AOV)',freq:1.1,cogs:0.5,ship:3800,pg:0.033,churn:0.22,cac:26000,viral:0.035,tam:1000000,serverBase:250000,serverPer:25,csBase:700,csPer:6000,mvp:30,valMul:0.28,
+  commerce:{name:'D2C 커머스',ex:'저당 간편식 자사몰',unit:'월 구매고객',unitS:'명',base:36000,priceLabel:'평균 객단가(AOV)',freq:1.1,cogs:0.5,ship:3800,pg:0.033,churn:0.25,cac:32000,viral:0.03,tam:1000000,serverBase:250000,serverPer:25,csBase:700,csPer:6000,mvp:30,valMul:0.28,
     note:'매출은 빨리 나지만 원가 44%, 택배비, PG수수료 3.3%를 떼면 남는 게 적습니다. 공헌이익을 지키며 키워야 합니다.'},
   market:{name:'버티컬 마켓플레이스',ex:'홈클리닝·돌봄 매칭 플랫폼',unit:'월 거래고객',unitS:'명',base:0.15,priceLabel:'중개 수수료율',gmv:125000,pg:0.022,churn:0.13,cac:17000,viral:0.07,tam:1300000,serverBase:300000,serverPer:40,csBase:600,csPer:5000,mvp:34,valMul:0.8,
     note:'수요와 공급(도우미)을 동시에 키워야 하는 닭과 달걀 문제. 공급이 부족하면 거래가 성사되지 않아 고객이 떠납니다. 영업 = 공급자 모집.'},
@@ -510,7 +510,7 @@ function simulate(){
   let sales=0;const salesSea=s.ind==='mfg'||s.ind==='saas'?sea:1;
   if(s.ind==='saas')sales=salesPow*7*(0.4+pF)*gate*pConv;
   else if(s.ind==='app')sales=salesPow*300*gate;
-  else if(s.ind==='commerce')sales=salesPow*130*gate;
+  else if(s.ind==='commerce')sales=salesPow*80*gate;
   else if(s.ind==='mfg')sales=salesPow*3*(0.4+pF)*gate*pConv*(1+Object.keys(s.markets).length*0.25);
   sales*=salesSea;
   if(!s.flags.launched){s.waitlist=(s.waitlist||0)+(A.interview*TAM*0.00025+A.sales*TAM*0.0002*(F.sales/50)+chSum()/I.cac*0.6+s.brand*TAM*0.00005)*(s.ind==='mfg'?0.3:1);
@@ -539,11 +539,11 @@ function simulate(){
   {const ageF=a=>a===0?1.7:a===1?1.3:a<6?1:0.7;for(const c of s.coh){const last=c.r[c.r.length-1];if(c.r.length<13)c.r.push(last*(1-clamp(churnR*ageF(c.r.length-1),0,0.9)))}
    s.coh.push({m,n:newU,r:[1]});if(s.coh.length>12)s.coh.shift()}
   // ---- 매출 ----
-  const U=s.users;let rev=0,cogs=0,ship=0,pg=0,store=0,gmv=0,paying=0,orders=0;
+  const U=s.users;let refund=0,rev=0,cogs=0,ship=0,pg=0,store=0,gmv=0,paying=0,orders=0;
   const disc=1-s.annual*0.15;
   if(s.ind==='saas'){rev=Math.floor(U)*s.price*fxv('arpu')*disc}
   else if(s.ind==='app'){paying=U*I.payConv*(0.5+pF)*Math.pow(pr,-0.7)*fxv('conv');rev=paying*s.price*fxv('arpu')*disc;store=rev*I.storeFee}
-  else if(s.ind==='commerce'){orders=U*I.freq*(0.8+0.4*pF)*sea;rev=orders*s.price*fxv('arpu');const scale=Math.max(1,orders/800);cogs=rev*I.cogs*(1-0.07*Math.log10(scale))*(s.flags.cogsShock?1.1:1)*fxv('cogs');ship=orders*I.ship*fxv('ship');pg=rev*I.pg}
+  else if(s.ind==='commerce'){const sb=s.flags.sale;orders=U*I.freq*(0.8+0.4*pF)*sea*(sb?sb.mult:1);if(sb){rev=0}rev=orders*s.price*fxv('arpu')*(sb?1-sb.disc:1);refund=rev*0.045;if(sb){delete s.flags.sale}const scale=Math.max(1,orders/800);cogs=rev*I.cogs*(1-0.07*Math.log10(scale))*(s.flags.cogsShock?1.1:1)*fxv('cogs');ship=orders*I.ship*fxv('ship');pg=rev*I.pg}
   else if(s.ind==='market'){const tx=U*0.95*liq*sea;gmv=tx*I.gmv*fxv('arpu');rev=gmv*s.price;pg=gmv*I.pg}
   let mf=null,storage=0,depr=0,siteCost=0,cashRev=0;
   if(s.mfg){const M=s.mfg;
@@ -566,6 +566,7 @@ function simulate(){
     mf={demand,prod,ownP,oemP,good,sold,cap:ownCap+oemCap,ownCap,yield:M.yield,fill:M.fill,inv:M.inv,matC};
     if(s.flags.po&&--s.flags.po.left<=0)delete s.flags.po;
   }
+  if(s.flags.sale&&s.ind!=='commerce')delete s.flags.sale;
   let extraRev=0;s.extra=s.extra.filter(x=>{extraRev+=x.amt;return --x.left>0});
   rev+=extraRev;
   {const osh=1-ind().tam*fxv('tam')/tam();if(osh>0)rev*=1+osh*(s.usd/1380-1)}
@@ -586,7 +587,19 @@ function simulate(){
   s.loans=s.loans.filter(l=>{interest+=l.bal*l.rate/12;let pp=0;if(l.grace>0)l.grace--;else pp=Math.min(l.bal,l.orig/l.term);l.bal-=pp;principal+=pp;if(l.bal<=1){note(`${l.name} 상환 완료.`,'good');return false}return true});
   let grant=0;s.grants=s.grants.filter(g=>{if(g.at<=m){grant+=g.amt;if(--g.left>0){g.at=m+1;return true}return false}return true});
   const ipoCost=s.ipo?(s.ipo.stage==='review'?1.5e7:3e7):s.pub?2e7:0;
-  const opCost=pay+ins+rent+server+tools+misc+acct+ad+brandAd+cogs+ship+pg+store+ipoCost+storage+siteCost+mktCost+factFee;
+  let bonusPay=0,recCost=0;
+  {const B=s.bonus;if(B&&B.cycle!=='none'&&s.team.length){const per={q:[3,6,9,12],h:[6,12],y:[12]}[B.cycle];if(per.includes(cal)){const k=12/per.length*0+per.length;
+      const base=s.team.reduce((a,e)=>a+e.salary,0);let amt=B.type==='ps'?Math.max(0,s.hist.slice(-12/k).reduce((a,h)=>a+(h.op||0),0))*B.rate:base*B.rate/k;
+      if(B.type==='fixed'&&runway()<4){amt=0;note('자금 사정으로 이번 성과급 지급을 보류했습니다. 직원들이 크게 실망합니다.','bad');s.team.forEach(e=>e.morale-=8)}
+      else if(amt<=0){note('이익 공유 성과급: 적자로 지급액 0원.','bad');s.team.forEach(e=>e.morale-=3)}
+      else{bonusPay=amt;const ratio=amt/s.team.length/(base/s.team.length/12);const mb=Math.min(16,2+ratio*6);s.team.forEach(e=>{if(!e.leave)e.morale+=mb});s.bonusPaid=(s.bonusPaid||0)+amt;note(`${B.type==='ps'?'이익 공유':'정기'} 성과급 ${won(amt)} 지급 (1인 평균 ${won(amt/s.team.length)}, 월급의 ${trim(ratio,1)}배). 팀 사기 +${Math.round(mb)}.`,'good')}}}}
+  {const AR=s.autoRec;if(AR&&AR!=='off'&&s.team.length){const n=s.team.length+1;let ev=null;
+    if(AR==='din'||AR==='mix')ev={n:'월례 회식',c:6e4*n,m:3};
+    if((AR==='ws'||AR==='mix')&&[3,6,9,12].includes(cal))ev={n:'분기 팀 워크숍',c:3e5*n+(AR==='mix'?6e4*n:0),m:AR==='mix'?10:8,e:3};
+    if(AR==='trip'&&[6,12].includes(cal))ev={n:'반기 해외 워크숍',c:1.8e6*n,m:16,e:6};
+    if(AR==='club')ev={n:'사내 동호회 지원',c:5e4*n,m:2,club:1};
+    if(ev){if(runway()<5&&runway()!==Infinity){note(`자금 사정으로 ${ev.n} 취소.`);s.team.forEach(e=>e.morale-=1)}else{recCost=ev.c;s.team.forEach(e=>{if(!e.leave)e.morale+=ev.m});if(ev.e)F.energy=Math.min(100,F.energy+ev.e);if(ev.club)s.team.forEach(e=>{if(e.trait==='hopper'&&R()<0.03)e.trait='none'});if(ev.m>=8)note(`${ev.n} 진행 (${won(ev.c)}). 팀 사기 +${ev.m}.`)}}}}
+  const opCost=pay+ins+rent+server+tools+misc+acct+ad+brandAd+cogs+ship+pg+store+ipoCost+storage+siteCost+mktCost+factFee+refund+bonusPay*1.1056+recCost;
   // ---- 세금 ----
   let vatPay=0,corpTax=0;
   s.vat.out+=rev*0.1;s.vat.in+=(rent+server+tools+misc*0.5+ad+brandAd+cogs+ship+pg+store+siteCost)*0.1;
@@ -625,7 +638,7 @@ function simulate(){
   if(s.crunch)s.crunchM++;else s.crunchM=0;
   // ---- 창업자 ----
   const work=allocTotal()-A.rest;
-  let dE=27-4.9*work+9*A.rest-(rw<3?6:0)-(s.crunch?3:0)-(orgSize()>adminCap()?3:0)-(s.F.salary<2e6&&m>12?2:0)-(s.flags.personalDebt?2:0);
+  let dE=27+(F.er||0)-4.9*work+9*A.rest-(rw<3?6:0)-(s.crunch?3:0)-(orgSize()>adminCap()?3:0)-(s.F.salary<2e6&&m>12?2:0)-(s.flags.personalDebt?2:0);
   if(s.flags.forcedRest){dE+=30;s.flags.forcedRest=0}
   if(s.flags.leave>0){dE+=25;s.flags.leave--}
   s.wealth+=F.salary*0.82-2.5e6;if(s.flags.apt)dE+=2;
@@ -651,19 +664,21 @@ function simulate(){
   // ---- 기록 ----
   const fixed=pay+ins+rent+tools+misc+acct+siteCost+mktCost;
   const rec={m,rev,net,cash:s.cash,users:s.users,newU,churned,churnR,paid,organic,sales,effCAC,team:headcount(),quality:s.quality,pmf:s.pmf,val:fairVal(),
-    lines:{factFee,prepaidNet:prepaid-amort,rev,extraRev,cogs,ship,pg,store,pay,ins,ret,rent,server,tools,misc,acct,ad,brandAd,interest,principal,grant,vatPay,corpTax,ipoCost,storage,depr,siteCost,mktCost,recvChg:rev-cashRev},
+    lines:{refund,bonusPay,recCost,factFee,prepaidNet:prepaid-amort,rev,extraRev,cogs,ship,pg,store,pay,ins,ret,rent,server,tools,misc,acct,ad,brandAd,interest,principal,grant,vatPay,corpTax,ipoCost,storage,depr,siteCost,mktCost,recvChg:rev-cashRev},
     paying,orders,gmv,liq,supply:s.supply,prevUsers,fixed,devPow,featPow,mf,op,chs,sea,prepaid,amort,insB:{np:pay*0.045,hi:pay*0.03545,lt:pay*0.03545*0.1295,ei:pay*0.0115,ia:pay*0.009}};
   s.last=rec;s.hist.push({m,rev,cash:s.cash,users:s.users,net,op,val:rec.val,pmf:s.pmf,quality:s.quality,rival:s.rival.users,price:s.pub?s.pub.price:0});
   if(s.hist.length>240)s.hist.splice(0,s.hist.length-240);
   if(s.log.length>600)s.log.length=600;
   if(op>0)s.okStreak++;else s.okStreak=0;
   s.month++;
+  gainXP(3+(growth()>0.05?4:0)+(s.last&&s.last.op>0?3:0));
   boardTick(note);
   expTick(note);peersTick(note);
   checkAch(note);
   // ---- 이벤트 ----
   s.pending=[];
   for(const k of ['launchDay','ipoShow','earnShow','launchShow'])if(s.flags[k]){s.pending.push({live:k,d:s.flags[k]});delete s.flags[k]}
+  for(const l of (s.flags.lvUp||[]))s.pending.push(EV_LEVEL(l));s.flags.lvUp=[];
   for(const k of (s.flags.cele||[]).slice(0,2)){const c=CELE[k];s.pending.push({live:'celebrate',d:{t:c[0],s:c[1]}})}s.flags.cele=[];
   genReview();
   if(calM(s.month)===3&&s.team.some(e=>!e.cof))s.pending.push(EV_RAISE());
@@ -721,7 +736,7 @@ function closeRound(f,note){
   if(o.tips)s.tipsOK=true;
   s.brand+=4+f.i*2;
   note(`${r.name} 클로징: ${o.vc}로부터 ${won(o.amt)} 투자 유치 (프리머니 ${won(o.pre)}). 대표 지분 ${pc(myPct())}.`,'good');
-  s.fund=null;
+  s.fund=null;gainXP(60+f.i*30);
 }
 function acceptOffer(k){const f=s.fund,r=ROUNDS[f.i];f.chosen=f.offers[k];f.offers=null;f.dd=r.dd;addLog(`${f.chosen.vc} 텀시트 서명. 실사(Due Diligence) ${r.dd}개월 진행.`)}
 
@@ -857,7 +872,7 @@ const ACH=[
   {k:'launch',n:'출시 완료',d:'제품 정식 출시',f:()=>!!s.flags.launched},
   {k:'board',n:'이사회의 신임',d:'이사회 신뢰도 90 이상',f:()=>s.trust>=90},
 ];
-function checkAch(note){for(const a of ACH){if(!s.ach[a.k]&&a.f()){s.ach[a.k]=s.month;note(`업적 달성: ${a.n} — ${a.d}`,'good');s.brand+=1;if(CELE[a.k])(s.flags.cele=s.flags.cele||[]).push(a.k)}}}
+function checkAch(note){for(const a of ACH){if(!s.ach[a.k]&&a.f()){s.ach[a.k]=s.month;gainXP(40);note(`업적 달성: ${a.n} — ${a.d}`,'good');s.brand+=1;if(CELE[a.k])(s.flags.cele=s.flags.cele||[]).push(a.k)}}}
 
 /* ============ 이벤트 ============ */
 function EV_RAISE(){const avg=s.team.filter(e=>!e.cof).reduce((a,e)=>a+e.salary,0);
@@ -1021,6 +1036,18 @@ const EVENTS=[
   {w:()=>s.month>=6&&s.quality>35&&!(s.flags.pitchAt>s.month-12)&&!s.pub?0.06:0,mk:()=>{const prize=pick([3e7,5e7,1e8]);return {eb:'피칭 대회',title:`창업 경진대회 결선 진출 (상금 ${won(prize)})`,body:'5분 피칭 후 심사위원 질의응답. 관객 투표도 반영됩니다.',choices:[
     {t:'데이터 중심의 차분한 피칭',d:`PMF·매출 기반 평가`,f:()=>{s.flags.pitchAt=s.month;const p=clamp(0.15+s.pmf/200+(lastRev()>0?0.15:0),0.1,0.75);if(R()<p){s.cash+=prize;s.brand+=5;return `대상 수상! 상금 ${won(prize)}.`}s.brand+=1;return '우수상에 그쳤지만 심사위원 VC와 명함을 교환했습니다.'}},
     {t:'감동적인 창업 스토리로 승부',d:'관객 투표에 강함, 모 아니면 도',f:()=>{s.flags.pitchAt=s.month;if(R()<0.4){s.cash+=prize;s.brand+=8;return `관객 투표 압승으로 대상! 상금 ${won(prize)}. 피칭 영상이 화제가 됐습니다.`}return '심사위원 반응은 냉담했습니다. "숫자는 어디 있죠?"'}}]}}},
+  {w:()=>(s.ind==='commerce'||s.ind==='app'||s.ind==='market')&&calM(s.month)===10&&s.flags.launched&&!(s.flags.saleY===calY(s.month))?4:0,mk:()=>({eb:'시즌 빅세일',title:'11월 블랙프라이데이·코리아세일페스타 참여 여부를 정해야 합니다',body:'플랫폼 대형 할인전에 입점하면 트래픽이 폭발하지만 할인만큼 마진이 줄어듭니다. 경쟁사들도 모두 참여합니다.',choices:[
+    {t:'최대 40% 할인 — 판을 키운다',d:'11월 주문 2.6배, 신규 유입 대폭↑, 마진 급감',f:()=>{s.flags.saleY=calY(s.month);s.flags.sale={mult:2.6,disc:0.4};s.flags.boost=(s.flags.boost||0)+s.users*0.35+tam()*0.0015;s.brand+=4;return '메인 배너를 확보했습니다.'}},
+    {t:'20% 할인 — 적당히',d:'11월 주문 1.6배',f:()=>{s.flags.saleY=calY(s.month);s.flags.sale={mult:1.6,disc:0.2};s.flags.boost=(s.flags.boost||0)+s.users*0.12;return '무난하게 참여합니다.'}},
+    {t:'불참 — 브랜드 가치 지키기',d:'경쟁사로 일부 고객 이탈',f:()=>{s.flags.saleY=calY(s.month);s.users*=0.96;return '"할인 안 하는 브랜드"로 포지셔닝합니다.'}}]})},
+  {w:()=>s.rounds.length>0&&s.month>10&&!(s.flags.scoutAt>s.month-14)?0.06:0,mk:()=>{s.flags.scoutAt=s.month;const role=pick(['dev','pm','sales','data','mkt']),mk=ROLES[role].mk[3]*1e4,ask=Math.round(mk*1.1/1e6)*1e6,nm=pickName();return {eb:'스카우트 전쟁',title:`${s.rival.name}와 S급 ${ROLES[role].name} ${nm}을 두고 영입 경쟁 중입니다`,body:`역량 ${ri(90,98)}의 업계 최고 인재입니다. ${s.rival.name}가 연봉 ${won(ask*1.15)}를 제시했다는 소문입니다.`,choices:[
+    {t:`연봉 ${won(ask*1.3)} 제시`,d:'승률 70%',f:()=>{if(R()<0.7){s.team.push({id:s.nextId++,name:nm,role,lv:3,skill:ri(90,98),salary:ask*1.3,morale:80,ten:0,ramp:0,opt:0,trait:pick(['leader','grow','steady']),mil:0,leave:0});gainXP(15);return `${nm} 영입 성공! 다음 달부터 합류합니다.`}s.rival.g+=0.004;return `${nm}은 결국 ${s.rival.name}로 갔습니다.`}},
+    {t:'연봉은 맞추고 스톡옵션 1% 추가',d:'승률 65%, 지분 희석',f:()=>{if(R()<0.65){ensureEsop();const g=Math.min(0.01,s.esopFree);s.esopFree-=g;s.team.push({id:s.nextId++,name:nm,role,lv:3,skill:ri(90,98),salary:ask*1.15,morale:85,ten:0,ramp:0,opt:g,trait:pick(['leader','grow','steady']),mil:0,leave:0});gainXP(15);return `${nm} 영입! "회사의 미래에 걸어보겠습니다."`}return '옵션으로는 마음을 돌리지 못했습니다.'}},
+    {t:'대표가 직접 저녁 식사하며 설득',d:`대표 인맥 ${s.F.network} 기반, 체력 -5`,f:()=>{s.F.energy-=5;if(R()<0.25+s.F.network/150){s.team.push({id:s.nextId++,name:nm,role,lv:3,skill:ri(88,96),salary:ask,morale:85,ten:0,ramp:0,opt:0,trait:'leader',mil:0,leave:0});gainXP(20);return `비전에 공감한 ${nm}이 희망연봉 그대로 합류합니다!`}return '좋은 대화였지만 결국 거절했습니다.'}},
+    {t:'포기한다',d:'',f:()=>'다른 인재를 찾아봅니다.'}]}}},
+  {w:()=>s.team.length>=4&&!(s.flags.famAt>s.month-5)?0.08:0,mk:()=>{s.flags.famAt=s.month;const e=pick(s.team),k=pick(['결혼','출산','부친상','모친상','이사','대학원 합격']);return {eb:'경조사',title:`${e.name}(${ROLES[e.role].name})의 ${k} 소식`,body:k.includes('상')?'갑작스러운 비보입니다. 회사의 대응을 팀원들이 지켜보고 있습니다.':'축하할 일입니다. 회사 차원에서 어떻게 챙길까요?',choices:[
+    {t:'규정대로 경조금과 휴가',d:'50만원, 해당 직원 사기 +5',f:()=>{s.cash-=5e5;e.morale+=5;return '규정대로 처리했습니다.'}},
+    {t:'대표가 직접 챙기고 넉넉하게',d:`200만원, 대표 체력 -2, 해당 직원 사기 +15, 팀 사기 +2`,f:()=>{s.cash-=2e6;s.F.energy-=2;e.morale+=15;s.team.forEach(x=>x.morale+=2);if(k==='대학원 합격')return `${e.name}이 "야간 대학원으로 다니며 계속 일하겠다"고 했습니다.`;return '팀원들이 "이런 회사 처음"이라며 감동했습니다.'}}]}}},
   {w:()=>s.markets.cn&&!s.flags.cnReg?0.08:0,mk:()=>({eb:'해외',title:'중국 당국이 외국 기업 데이터 규제를 강화했습니다',body:'현지 데이터센터 이전과 보안 심사가 의무화됐습니다.',choices:[
     {t:'현지화 투자',d:'5억원',f:()=>{s.flags.cnReg=1;s.cash-=5e8;return '심사를 통과했습니다.'}},
     {t:'중국 사업 철수',d:'진출 비용 손실',f:()=>{s.flags.cnReg=1;delete s.markets.cn;return '중국 법인을 청산했습니다.'}}]})},
@@ -1290,6 +1317,46 @@ function peersTick(note){if(!s.peers)initPeers();const before=rankOf();for(const
   const after=rankOf();if(after<before&&after<=10)note(`국내 스타트업 기업가치 순위 ${after}위로 상승!`,'good');}
 function rankOf(){const v=compVal();return 1+(s.peers||[]).filter(p=>p.v>v).length}
 
+
+/* ---- 대표 레벨 ---- */
+const TITLES=['예비창업자','초보 대표','실전 대표','노련한 경영자','스타 창업가','업계의 전설','살아있는 신화'];
+const lvOf=xp=>1+Math.floor(Math.sqrt((xp||0)/60));
+const titleOf=l=>TITLES[Math.min(TITLES.length-1,Math.floor((l-1)/2))];
+function gainXP(n,why){const F=s.F,before=lvOf(F.xp);F.xp=(F.xp||0)+n;const after=lvOf(F.xp);if(after>before){(s.flags.lvUp=s.flags.lvUp||[]).push(after)}}
+function EV_LEVEL(l){return {eb:'대표 레벨 업',title:`레벨 ${l} 달성 — "${titleOf(l)}"`,body:'경험이 쌓였습니다. 어떤 역량을 키울까요?',choices:[
+  {t:'개발 역량 +6',d:`현재 ${s.F.dev}`,f:()=>{s.F.dev=Math.min(99,s.F.dev+6);return '밤마다 코드를 읽으며 실력이 늘었습니다.'}},
+  {t:'영업 역량 +6',d:`현재 ${s.F.sales}`,f:()=>{s.F.sales=Math.min(99,s.F.sales+6);return '거절당하는 데 익숙해졌습니다.'}},
+  {t:'인맥 +6',d:`현재 ${s.F.network}`,f:()=>{s.F.network=Math.min(99,s.F.network+6);return '업계 모임에서 이름이 알려지기 시작했습니다.'}},
+  {t:'회복력 +3',d:`매달 체력 회복 +3 (현재 +${s.F.er||0})`,f:()=>{s.F.er=(s.F.er||0)+3;return '운동과 수면 루틴을 만들었습니다.'}}]}}
+
+/* ---- 라이브 커머스 ---- */
+const LC_POOL=['주문했어요!','쿠폰 어디서 받아요?','품절 임박?','쇼호스트님 텐션 최고','이 가격 실화?','2개 샀어요 ㅎㅎ','배송 언제 와요?','후기 보고 왔어요','맛있어 보여요','엄마 선물로 삽니다','장바구니 담았다','리뷰 이벤트 하나요?','결제 오류 나요 ㅠ','벌써 재구매 3번째','다음 방송 언제예요?'];
+function canLive(){return (s.ind==='commerce'||s.ind==='app'||s.ind==='market')&&s.flags.launched&&!(s.flags.lcAt>s.month-2)}
+function startLiveCommerce(host){
+  const cost=host==='celeb'?sc(2.5e7):sc(5e6);if(s.cash<cost)return;s.cash-=cost;s.flags.lcAt=s.month;
+  const I=ind(),pull=(host==='celeb'?2.6:1)*(0.5+s.brand/60)*(0.6+s.quality/150);
+  const viewers=Math.round((1500+s.users*0.6+tam()*0.002)*pull*rnd(0.6,1.5));
+  const conv=clamp(0.02+s.pmf/1500+rnd(-0.01,0.02),0.01,0.08);const orders=Math.round(viewers*conv*(host==='celeb'?1.3:1));
+  const unit=s.ind==='commerce'?s.price*0.85:s.ind==='app'?s.price*12*0.6:I.gmv*s.price;
+  const rev=orders*unit,margin=s.ind==='commerce'?rev*(1-I.cogs-0.12):rev*0.7;
+  s.cash+=margin;s.flags.boost=(s.flags.boost||0)+orders*0.5;s.brand+=host==='celeb'?4:2;
+  addLog(`라이브 커머스 방송 (${host==='celeb'?'셀럽 게스트':'자체 쇼호스트'}, ${won(cost)}): 시청 ${num(viewers)}명, 주문 ${num(orders)}건, 공헌이익 ${won(margin)}.`);
+  queue.push({live:{live:'lc',d:{viewers,orders,rev,margin,cost,host}}});nextModal();
+}
+function showLC(d){
+  liveFrame('라이브 커머스',`${s.co} 라이브 방송 ${d.host==='celeb'?'— 셀럽 게스트 출연':''}`);setViewers(0);lvCount=0;
+  const st=document.getElementById('lvStage');
+  st.innerHTML=`<div class="grid3"><div><div class="note">동시 시청</div><div class="lv-big mono" id="lcV">0</div></div><div><div class="note">누적 주문</div><div class="lv-big mono up" id="lcO">0</div></div><div><div class="note">매출</div><div class="lv-big mono" id="lcR">0원</div></div></div>
+   <div class="lv-count mono" id="lvCd">방송 시작 전</div><div class="lv-verdict" id="lvVerdict" hidden></div>`;
+  const verdict=()=>{const v=document.getElementById('lvVerdict');v.hidden=false;const hit=d.margin>d.cost*1.5;v.className='lv-verdict '+(hit?'up':d.margin<d.cost?'down':'');v.innerHTML=`<b>${hit?'완판 대박':d.margin<d.cost?'적자 방송':'선방'}</b><span class="mono">주문 ${num(d.orders)}건 · 매출 ${won(d.rev)} · 방송비 ${won(d.cost)} · 공헌이익 ${won(d.margin)}</span>`};
+  const final=()=>{document.getElementById('lcV').textContent=num(d.viewers);document.getElementById('lcO').textContent=num(d.orders);document.getElementById('lcR').textContent=won(d.rev);document.getElementById('lvCd').textContent='방송 종료';verdict();if(document.getElementById('lvMsgs').children.length<8)for(let i=0;i<12;i++)chat(pick(LC_POOL),'up')};
+  at(400,()=>{document.getElementById('lvCd').textContent='ON AIR'});
+  roll('lcV',0,d.viewers,4000,num);for(let i=0;i<=20;i++)at(1500+i*260,()=>{const k=i/20;document.getElementById('lcO').textContent=num(d.orders*k*k);document.getElementById('lcR').textContent=won(d.rev*k*k);setViewers(Math.round(d.viewers*Math.min(1,0.3+k)))});
+  at(4200,()=>{const c=document.getElementById('lvCd');c.textContent=d.orders>500?'품절 임박!':'마감 10분 전';c.classList.add('flash')});
+  burst(LC_POOL,Math.round(clamp(20+d.orders/40,20,70)),300,6500,{},'up');
+  at(7000,()=>{verdict();liveFinish()});bindLive(final);
+}
+
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
   if(s.ended)return;
@@ -1357,7 +1424,7 @@ function unitEcon(){
   let arpu=0,gm=1;
   if(s.ind==='saas'){arpu=s.price;gm=0.85}
   else if(s.ind==='app'){arpu=L.rev/Math.max(1,s.users);gm=1-I.storeFee-0.05}
-  else if(s.ind==='commerce'){arpu=L.rev/Math.max(1,s.users);gm=1-(L.lines.cogs+L.lines.ship+L.lines.pg)/Math.max(1,L.lines.rev)}
+  else if(s.ind==='commerce'){arpu=L.rev/Math.max(1,s.users);gm=1-(L.lines.cogs+L.lines.ship+L.lines.pg+(L.lines.refund||0))/Math.max(1,L.lines.rev)}
   else{arpu=L.rev/Math.max(1,s.users);gm=1-L.lines.pg/Math.max(1,L.lines.rev)}
   const ltv=arpu*gm/Math.max(0.01,L.churnR);
   const blended=(L.lines.ad+L.lines.brandAd+payroll()*0.15)/Math.max(1,L.newU);
@@ -1440,6 +1507,9 @@ function mentorTips(){
   if(launched&&s.users>=50&&!(s.exp&&s.exp.cur)&&rw>6)add(25,'그로스 실험실에서 A/B 테스트를 돌려보세요. 성공하면 효과가 영구 반영됩니다.','prod');
   if(!s.pub&&!s.ipo){const q=ipoReq();if((q.gen||q.tech)&&!q.retry)add(68,'상장 요건을 충족했습니다. 투자 탭에서 상장 준비를 시작할 수 있습니다.','inv')}
   return T.sort((a,b)=>b.pri-a.pri).slice(0,3)}
+function bonusPreview(){const B=s.bonus;if(!B||B.cycle==='none')return '성과급은 사기를 크게 올리고 이직을 막아줍니다. 지급 시점마다 비용이 나갑니다.';
+  const k={q:4,h:2,y:1}[B.cycle],base=s.team.reduce((a,e)=>a+e.salary,0);const est=B.type==='ps'?Math.max(0,s.hist.slice(-12/k).reduce((a,h)=>a+(h.op||0),0))*B.rate:base*B.rate/k;
+  return `다음 지급 예상액 약 ${won(est)} (1인 평균 ${won(est/Math.max(1,s.team.length))}). ${B.type==='ps'?'적자면 0원이라 실망이 큽니다.':'현금이 4개월 치 미만이면 지급이 보류됩니다.'}`}
 function cohortTable(){
   const C=s.coh.filter(c=>c.n>=1);if(C.length<2)return '';
   const cell=v=>`<td class="r mono" style="background:color-mix(in srgb,var(--accent) ${Math.round(v*55)}%,transparent);color:${v>0.55?'var(--accent-ink)':'var(--ink)'}">${Math.round(v*100)}</td>`;
@@ -1468,6 +1538,9 @@ function tProd(){
    <div class="grid2">${feats.map(f=>{const done=s.road.done.includes(f.k),lock=f.q&&s.quality<f.q;return `<div class="panel" style="padding:10px;gap:4px;${done?'opacity:.65':''}"><div class="row between"><b>${f.n}</b>${done?'<span class="chip good">출시</span>':f.k===s.road.cur?'<span class="chip acc">개발 중</span>':''}</div><span class="note">${f.d}</span><span class="note mono">${fxTxt(f.fx)} · 개발량 ${f.c}${f.q?` · 완성도 ${f.q} 필요`:''}</span>
      ${done||f.k===s.road.cur?'':`<button class="btn sm" data-feat="${f.k}" ${lock?'disabled':''}>${s.road.cur?'이걸로 변경 (진행분 손실)':'개발 시작'}</button>`}</div>`}).join('')}</div>
   </div>
+  ${s.ind==='commerce'||s.ind==='app'||s.ind==='market'?`<div class="panel"><div class="row between"><h2>라이브 커머스</h2><span class="chip">2개월에 1회</span></div>
+   <p class="note">쇼호스트와 함께 실시간 판매 방송을 합니다. 브랜드 인지도와 PMF가 높을수록 시청자와 주문이 늘고, 시청자 일부는 신규 고객이 됩니다. 방송비 이상을 벌지 못하면 적자입니다.</p>
+   <div class="row"><button class="btn" data-lc="self" ${canLive()&&s.cash>sc(5e6)?'':'disabled'}>자체 쇼호스트 방송 (${won(sc(5e6))})</button><button class="btn" data-lc="celeb" ${canLive()&&s.cash>sc(2.5e7)?'':'disabled'}>셀럽 게스트 섭외 (${won(sc(2.5e7))})</button>${!s.flags.launched?'<span class="note">출시 후 가능</span>':''}</div></div>`:''}
   <div class="panel"><div class="row between"><h2>그로스 실험실</h2><span class="note">성공 ${s.exp?Object.keys(s.exp.done).length:0} / ${EXPS.length}</span></div>
    <p class="note">한 번에 하나씩 A/B 테스트를 돌립니다 (1개월, ${won(sc(5e6))}). 성공하면 효과가 영구 반영되고, 실패하면 약간 손해를 봅니다. ${ind().unit} 50${ind().unitS} 미만이면 표본 부족으로 결과가 안 나옵니다. 데이터 분석가가 있으면 성공률이 오릅니다.</p>
    ${s.exp&&s.exp.cur?`<div class="callout">진행 중: <b>${EXPS.find(x=>x.k===s.exp.cur.k).n}</b> — 다음 달 결과 발표</div>`:''}
@@ -1521,6 +1594,17 @@ function tTeam(){
    ${orgSize()>=15||stageIdx()>=3||s.pub?`<div class="row"><select id="bulkRole" style="width:auto">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${ui.bulkRole===k?'selected':''}>${v.name}</option>`).join('')}</select><button class="btn sm" data-bulk="5">5명 채용</button><button class="btn sm" data-bulk="20">20명 채용</button><span class="note">헤드헌팅·공채. 미드레벨, 1인당 수수료 500만</span></div>`:'<p class="note">직원 15명 이상 또는 시리즈 A 이후에는 대량 채용(공채·헤드헌팅)이 열립니다.</p>'}
    ${s.team.length?`<div class="tbl"><table><thead><tr><th>이름</th><th class="r">역량</th><th class="r">연봉</th><th>사기</th><th class="r">스톡옵션</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="muted">아직 혼자입니다. 첫 채용은 회사의 문화를 결정합니다.</p>'}
    <p class="note">권고사직 시 해고예고수당 1개월분 지급, 1년 이상 근무자는 퇴직금 별도. 남은 팀원 사기 하락. 관리 역량 ${adminCap()}명 (경영지원 1명당 +14).</p></div>
+   ${s.team.length?`<div class="panel"><h2>보상·복지 정책</h2>
+    <div class="grid2"><div class="field"><label for="bonusCycle">정기 성과급</label>
+      <select id="bonusCycle">${[['none','지급 안 함'],['q','분기마다 (3·6·9·12월)'],['h','반기마다 (6·12월)'],['y','연 1회 (12월)']].map(([k,n])=>`<option value="${k}" ${(s.bonus||{}).cycle===k||(!s.bonus&&k==='none')?'selected':''}>${n}</option>`).join('')}</select>
+      <select id="bonusType">${[['fixed','고정: 연봉의 일정 비율'],['ps','이익 공유(PS): 영업이익의 일정 비율']].map(([k,n])=>`<option value="${k}" ${(s.bonus||{}).type===k?'selected':''}>${n}</option>`).join('')}</select>
+      <div class="row between"><span class="note">${(s.bonus||{}).type==='ps'?'영업이익 대비':'연봉 대비 (연간 합계)'}</span><b class="mono" id="bonusLbl">${pc((s.bonus||{}).rate||0.1,0)}</b></div>
+      <input type="range" id="bonusRate" min="1" max="${(s.bonus||{}).type==='ps'?30:40}" value="${Math.round(((s.bonus||{}).rate||0.1)*100)}">
+      <p class="note">${bonusPreview()}</p></div>
+     <div class="field"><label for="autoRec">자동 레크리에이션</label>
+      <select id="autoRec">${[['off','끄기'],['din','매월 회식 (인당 6만)'],['ws','분기 워크숍 (인당 30만)'],['mix','분기 워크숍 + 매월 회식'],['trip','반기 해외 워크숍 (인당 180만)'],['club','사내 동호회 지원 (인당 월 5만)']].map(([k,n])=>`<option value="${k}" ${(s.autoRec||'off')===k?'selected':''}>${n}</option>`).join('')}</select>
+      <p class="note">설정해두면 매달 자동으로 진행됩니다. 현금이 5개월 치 미만이면 자동으로 취소됩니다. 동호회는 이직러 성향을 서서히 줄여줍니다.</p>
+      <p class="note">누적 지급 성과급 ${won(s.bonusPaid||0)}</p></div></div></div>`:''}
    ${s.team.length?`<div class="panel"><h2>팀 이벤트</h2><div class="grid2">${TEAMEV.map(e=>{const cost=(e.flat||0)+e.per*(s.team.length+1),cd=s.tev&&s.tev[e.k]!=null&&s.tev[e.k]>s.month-e.cd;return `<div class="panel" style="padding:10px;gap:4px"><b>${e.n}</b><span class="note">${e.d}</span><button class="btn sm" data-tev="${e.k}" ${cd||s.cash<cost?'disabled':''}>${cd?'최근에 진행함':won(cost)}</button></div>`}).join('')}</div></div>`:''}
    ${(s.reviews||[]).length?`<div class="panel"><div class="row between"><h2>익명 직장인 리뷰</h2><span class="stars mono">★ ${trim(s.reviews.reduce((a,r)=>a+r.st,0)/s.reviews.length,1)}</span></div>${s.reviews.map(r=>`<div class="post" style="padding:8px 10px;gap:2px"><div class="row between"><span class="stars">${'★'.repeat(Math.round(r.st))}${'☆'.repeat(5-Math.round(r.st))}</span><span class="note mono">${ym(r.m)} · ${esc(r.role)}</span></div><span>${esc(r.t)}</span></div>`).join('')}<p class="note">평점이 낮으면 지원자가 줄어듭니다.</p></div>`:''}
    <div class="panel"><div class="row between"><h2>이번 달 후보자</h2>
@@ -1533,15 +1617,15 @@ function tFin(){
   const L=s.last;if(!L)return `<div class="panel"><p class="muted">첫 달을 진행하면 손익계산서가 표시됩니다.</p></div>`;
   const l=L.lines;const r=(n,v,c='')=>v?`<tr class="${c}"><td>${n}</td><td class="r mono">${won(v)}</td></tr>`:'';
   const cogsT=l.cogs+l.ship+l.pg+l.store;
-  const opex=l.pay+l.ins+l.ret+l.rent+l.server+l.tools+l.misc+l.acct+l.ad+l.brandAd+l.ipoCost+(l.storage||0)+(l.siteCost||0)+(l.mktCost||0)+(l.depr||0);
+  const opex=(l.refund||0)+(l.bonusPay||0)*1.1056+(l.recCost||0)+l.pay+l.ins+l.ret+l.rent+l.server+l.tools+l.misc+l.acct+l.ad+l.brandAd+l.ipoCost+(l.storage||0)+(l.siteCost||0)+(l.mktCost||0)+(l.depr||0);
   const ebitda=l.rev-cogsT-opex;
   const H=s.hist.slice(-12);const ttm=H.reduce((a,h)=>a+h.rev,0);
   return `<div class="grid2">
    <div class="panel"><h2>${ym(L.m)} 손익 · 현금흐름</h2><div class="tbl"><table class="pl"><tbody>
     ${r('매출',l.rev,'sub')}${r('  └ B2B 계약 매출',l.extraRev)}
-    ${r(s.mfg?'원자재·가공비':'매출원가(상품)',-l.cogs)}${r(s.mfg?'납품 물류비':'택배·물류비',-l.ship)}${r('PG 결제수수료',-l.pg)}${r('앱마켓 수수료',-l.store)}
+    ${r(s.mfg?'원자재·가공비':'매출원가(상품)',-l.cogs)}${r(s.mfg?'납품 물류비':'택배·물류비',-l.ship)}${r('PG 결제수수료',-l.pg)}${r('반품·환불 (4.5%)',-(l.refund||0))}${r('앱마켓 수수료',-l.store)}
     <tr class="sub"><td>매출총이익</td><td class="r mono">${won(l.rev-cogsT)}</td></tr>
-    ${r('급여',-l.pay)}${r('4대보험 사업주분 (10.56%)',-l.ins)}${L.insB?`<tr><td colspan="2" class="note" style="padding-left:18px">국민연금 4.5% ${won(L.insB.np)} · 건강보험 3.545% ${won(L.insB.hi)} · 장기요양 ${won(L.insB.lt)} · 고용보험 1.15% ${won(L.insB.ei)} · 산재보험 0.9% ${won(L.insB.ia)}</td></tr>`:''}${r('퇴직급여 충당 (8.33%)',-l.ret)}
+    ${r('급여',-l.pay)}${r('4대보험 사업주분 (10.56%)',-l.ins)}${L.insB?`<tr><td colspan="2" class="note" style="padding-left:18px">국민연금 4.5% ${won(L.insB.np)} · 건강보험 3.545% ${won(L.insB.hi)} · 장기요양 ${won(L.insB.lt)} · 고용보험 1.15% ${won(L.insB.ei)} · 산재보험 0.9% ${won(L.insB.ia)}</td></tr>`:''}${r('퇴직급여 충당 (8.33%)',-l.ret)}${r('성과급 (4대보험 포함)',-(l.bonusPay||0)*1.1056)}${r('레크리에이션·회식',-(l.recCost||0))}
     ${r('임차료',-l.rent)}${r('서버·클라우드',-l.server)}${r('SW 구독·장비',-l.tools)}${r('복리후생·통신·소모품',-l.misc)}${r('세무기장·법무',-l.acct)}
     ${r('매출채권 팩토링 수수료 (1.5%)',-(l.factFee||0))}${r('공장 임차·관리비',-l.siteCost)}${r('재고 보관비',-l.storage)}${r('감가상각비 (비현금)',-l.depr)}${r('해외 법인 운영비',-l.mktCost)}
     ${r('퍼포먼스 광고',-l.ad)}${r('브랜드 마케팅',-l.brandAd)}${r(s.pub?'상장 유지·IR 비용':'상장 준비 비용',-l.ipoCost)}
@@ -1733,6 +1817,8 @@ function plan(){
    ${av<8?`<p class="note warn">${s.flags.leave>0?`요양 중 (${s.flags.leave}개월 남음): 2칸만 사용 가능`:s.flags.forcedRest?'휴식 중: 3칸만 사용 가능':F.energy<20?'체력 부족으로 시간 감소':'조직 관리 부담으로 시간 감소'}</p>`:''}
    <div>${ACTS.map(a=>`<div class="act"><span class="n">${a.n}</span><span class="d">${a.d}${a.k==='dev'?` (개발역량 ${F.dev})`:a.k==='sales'?` (영업역량 ${F.sales})`:a.k==='ir'?` (네트워크 ${F.network})`:''}</span>
      <div class="stepper"><button data-dec="${a.k}" aria-label="${a.n} 줄이기">−</button><b>${A[a.k]}</b><button data-inc="${a.k}" aria-label="${a.n} 늘리기">+</button></div></div>`).join('')}</div>
+   <div class="row between"><span><b>${esc(s.fname)}</b> <span class="chip acc">Lv.${lvOf(F.xp)} ${titleOf(lvOf(F.xp))}</span></span><span class="note mono">개발 ${F.dev} · 영업 ${F.sales} · 인맥 ${F.network}</span></div>
+   ${meter('경험치',((F.xp||0)-60*Math.pow(lvOf(F.xp)-1,2))/(60*(Math.pow(lvOf(F.xp),2)-Math.pow(lvOf(F.xp)-1,2)))*100,100,'',`다음 레벨까지 ${Math.ceil(60*Math.pow(lvOf(F.xp),2)-(F.xp||0))}`)}
    ${meter('대표 체력',F.energy,100,F.energy<30?'bad':F.energy<50?'warn':'')}
    <div class="row between note"><span>대표 개인 자산 (생활비 월 250만)</span><b class="mono ${s.wealth<0?'bad':''}">${won(s.wealth)}</b></div>
    <p class="note">예상 지출 약 <b class="mono">${won(est)}</b> (매출원가·세금 제외)</p>
@@ -1807,7 +1893,7 @@ function nextModal(){
   if(!q){modal.hidden=true;if(s&&!s.ended)save();render();return}
   modal.hidden=false;
   sheet.classList.remove('wide');
-  if(q.live){const L=q.live;if(L.live==='earnShow')showEarn(L.d);else if(L.live==='ipoShow')showIPO(L.d);else if(L.live==='launchDay')showLaunchDay(L.d);else if(L.live==='celebrate')showCelebrate(L.d);else showLaunch(L.d);sheet._q=q;return}
+  if(q.live){const L=q.live;if(L.live==='lc')showLC(L.d);else if(L.live==='earnShow')showEarn(L.d);else if(L.live==='ipoShow')showIPO(L.d);else if(L.live==='launchDay')showLaunchDay(L.d);else if(L.live==='celebrate')showCelebrate(L.d);else showLaunch(L.d);sheet._q=q;return}
   if(q.report){sheet.innerHTML=q.html+`<button class="btn primary" data-m="ok">확인</button>`}
   else{const ev=q.ev;sheet.innerHTML=`<span class="eyebrow">${esc(ev.eb)}</span><h2>${esc(ev.title)}</h2><p>${esc(ev.body)}</p><div class="choices">${ev.choices.map((c,i)=>`<button class="choice" data-c="${i}"><b>${esc(c.t)}</b>${c.d?`<small>${esc(c.d)}</small>`:''}</button>`).join('')}</div>`;sheet._ev=ev}
   sheet._q=q;const b=sheet.querySelector('button');if(b)b.focus({preventScroll:true});
@@ -1851,6 +1937,7 @@ app.addEventListener('click',e=>{
   if(d.ceo){ceoPost(d.ceo);render();return}
   if(d.life){lifeAct(d.life);render();return}
   if(d.exp){runExp(d.exp);render();return}
+  if(d.lc){startLiveCommerce(d.lc);return}
   if(d.tev){teamEv(d.tev);render();return}
   if(d.feat){if(s.road.cur&&s.road.cur!==d.feat)addLog('개발 중이던 기능을 중단하고 우선순위를 바꿨습니다.');s.road.cur=d.feat;s.road.prog=0;render();return}
   if(d.cert2){const k=d.cert2,cost={venture:3e5,lab:5e5,isms:1.5e8}[k];s.cash-=cost;s.certLeft2[k]={venture:1,lab:1,isms:6}[k];s.certs[k]='review';addLog(`${{venture:'벤처기업 확인',lab:'기업부설연구소 인정',isms:'ISMS-P 인증'}[k]} 신청 (${won(cost)}).`);render();return}
@@ -1891,6 +1978,7 @@ app.addEventListener('input',e=>{
   if(t.id==='price'){s.price=s.ind==='market'?ind().base*t.value/100:Math.round(ind().base*t.value/100/100)*100;document.getElementById('priceLbl').textContent=s.ind==='market'?pc(s.price,1):won(s.price)}
   if(t.id.startsWith('ch_')){const k=t.id.slice(3),v=+t.value;const amt=v===0?0:Math.round(Math.pow(10,5+v/100*5.3)/1e5)*1e5;s.ch[k]=amt;document.getElementById('chl_'+k).textContent=won(amt)}
   if(t.id==='roadShare'){s.road.share=+t.value/100;document.getElementById('roadLbl').textContent=pc(s.road.share,0)}
+  if(t.id==='bonusRate'){s.bonus=s.bonus||{cycle:'none',type:'fixed',rate:0.1};s.bonus.rate=+t.value/100;document.getElementById('bonusLbl').textContent=pc(s.bonus.rate,0)}
   if(t.id==='annual'){s.annual=+t.value/100;document.getElementById('annLbl').textContent=pc(s.annual,0)}
   if(t.id==='fsal'){s.F.salary=+t.value*1e4;document.getElementById('salLbl').textContent=won(s.F.salary)}
 });
@@ -1900,6 +1988,9 @@ app.addEventListener('change',e=>{
   if(t.id==='oem'){s.mfg.oem=t.checked;render()}
   if(t.id==='factor'){s.mfg.factor=t.checked;render()}
   if(t.id==='rfocus'){s.recruitFocus=t.value}
+  if(t.id==='bonusCycle'||t.id==='bonusType'){s.bonus=s.bonus||{cycle:'none',type:'fixed',rate:0.1};if(t.id==='bonusCycle')s.bonus.cycle=t.value;else{s.bonus.type=t.value;s.bonus.rate=t.value==='ps'?0.1:0.1}render()}
+  if(t.id==='autoRec'){s.autoRec=t.value;addLog(`자동 레크리에이션 정책 변경: ${t.selectedOptions[0].textContent}`);render()}
+  if(t.id==='bonusRate')render();
   if(['price','fsal','roadShare','annual'].includes(t.id)||t.id.startsWith('ch_'))render();
 });
 function toast(msg,c=''){const d=document.createElement('div');d.textContent=msg;d.className='chip '+c;d.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:60;padding:8px 14px;font-size:13px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.18)';document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
