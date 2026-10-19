@@ -803,21 +803,31 @@ function listCompany(track,note){
   note(`코스닥 상장! 수요예측 경쟁률 ${num(ratio)}:1, 공모가 ${num(price)}원, 공모금액 ${won(raise)}. 첫날 종가 ${num(price*pop)}원 (${sgn(pop-1)}${pc(pop-1,0)}).`,'good');
   note(`상장으로 우선주(RCPS)가 보통주로 전환되었습니다. 최대주주 보호예수 12개월.`);
 }
+function earnTag(sur,op,score){
+  if(sur>=0.03&&op>=0.03)return score>=0.12?'어닝 서프라이즈':'호실적';
+  if(sur<=-0.03&&op<=-0.03)return score<=-0.12?'어닝 쇼크':'실적 부진';
+  if(sur<0&&op>0)return score>=0?'이익 서프라이즈 (매출은 미달)':'엇갈린 실적 (매출 미달, 이익 상회)';
+  if(sur>0&&op<0)return score>=0?'외형 성장 (이익은 미달)':'엇갈린 실적 (매출 상회, 이익 미달)';
+  return '컨센서스 부합'}
 function stockTick(note,cal){
-  const P=s.pub;const fund=fairVal()*1.15;P.prev=P.price;
+  const P=s.pub;const fund=fairVal()*1.15*(P.adr&&P.adr.on?1.25:1);P.prev=P.price;
+  adrTick(P,note);
   const di=rnd(-0.05,0.055)+(s.climate-1)*0.03;P.idx*=Math.exp(di);
   let drift=Math.log(fund/P.mcap)*0.12+di*1.2+rnd(-0.08,0.08)+(P.shock||0);P.shock=0;
   if(s.month>=P.lockup){let sold=0;for(const c of s.cap)if(c.t==='inv'&&c.pct>0.001){const x=c.pct*0.12;c.pct-=x;sold+=x}if(sold>0){const pb=s.cap.find(c=>c.t==='pub');pb.pct+=sold;drift-=sold*1.5}}
   P.price=Math.max(100,P.price*Math.exp(drift));P.mcap=P.price*P.shares;
+  if(s.flags.squeezeFade>0){s.flags.squeezeFade--;P.price*=rnd(0.6,0.75);P.mcap=P.price*P.shares;if(!s.flags.squeezeFade)note('숏 스퀴즈 거품이 대부분 꺼졌습니다.')}
   if(s.flags.themeCrash===s.month){P.price*=0.72;P.mcap=P.price*P.shares;note(`${s.flags.themeName} 테마 거품 붕괴. 주가 급락.`,'bad');boardCtx('theme')}
   if([3,6,9,12].includes(cal)){const q=s.hist.slice(-3).reduce((a,h)=>a+h.rev,0),opq=s.hist.slice(-3).reduce((a,h)=>a+(h.op||0),0);
     if(P.cons){const sur=q/P.cons-1,opSur=(opq-P.opCons)/Math.max(Math.abs(P.opCons),q*0.05,1e7);
-      let mv=sur*1.4+clamp(opSur,-1,1)*0.08+rnd(-0.04,0.04);if(s.flags.promise>s.month-6&&sur<0)mv-=0.05;if(s.flags.prove>s.month-6&&sur>0)mv+=0.03;mv=clamp(mv,-0.3,0.3);
+      const opS=clamp(opSur,-0.8,0.8),score=sur*0.9+opS*0.35;
+      const tag=earnTag(sur,opS,score);
+      let mv=score*1.3+rnd(-0.03,0.03);if(s.flags.promise>s.month-6&&score<0)mv-=0.05;if(s.flags.prove>s.month-6&&score>0)mv+=0.03;mv=clamp(mv,-0.3,0.3);
       const before=P.price,after=Math.max(100,P.price*(1+mv));const path=pathTo(before,after,28,0.012);P.price=after;P.mcap=P.price*P.shares;
       const label=`${calY(s.month)}년 ${Math.ceil(cal/3)}분기`;
-      s.flags.earnShow={label,rev:q,cons:P.cons,op:opq,opCons:P.opCons,sur,opSur,before,after,move:mv,path};
-      if(sur>=0.05){boardCtx('earnBeat');s.trust+=4}else if(sur<=-0.05){boardCtx('earnMiss');s.trust-=4;if(s.flags.promise>s.month-6)s.trust-=6}
-      note(`${label} 실적: 매출 ${won(q)} (컨센서스 대비 ${sgn(sur)}${pc(sur,0)}), 영업이익 ${won(opq)}. 주가 ${sgn(mv)}${pc(mv,1)}${Math.abs(mv)>=0.299?(mv>0?' 상한가':' 하한가'):''}.`,sur>=0.05?'good':sur<=-0.05?'bad':'')}
+      s.flags.earnShow={label,rev:q,cons:P.cons,op:opq,opCons:P.opCons,sur,opSur,score,tag,before,after,move:mv,path};
+      if(score>=0.04){boardCtx('earnBeat');s.trust+=4}else if(score<=-0.04){boardCtx('earnMiss');s.trust-=4;if(s.flags.promise>s.month-6)s.trust-=6}
+      note(`${label} 실적: 매출 ${won(q)} (컨센서스 대비 ${sgn(sur)}${pc(sur,0)}), 영업이익 ${won(opq)} (${sgn(opS)}${pc(opS,0)}). ${tag}. 주가 ${sgn(mv)}${pc(mv,1)}${Math.abs(mv)>=0.299?(mv>0?' 상한가':' 하한가'):''}.`,score>=0.04?'good':score<=-0.04?'bad':'')}
     P.cons=q*(1+clamp(growth()*3,0.02,0.6)*0.85);P.opCons=opq>0?opq*(1+clamp(growth()*3,0.02,0.5)):opq*0.7+q*0.02}
   if(s.flags.divPromise&&calY(s.month)>s.flags.divPromise&&cal===4){if(s.flags.divY!==calY(s.month)-1){s.trust-=10;P.price*=0.93;P.mcap=P.price*P.shares;note('주총에서 약속한 배당을 지키지 않아 주가가 하락했습니다.','bad')}delete s.flags.divPromise}
   if(cal===3&&s.month-P.at>=10){const y=calY(s.month)-1;const yr=s.hist.filter(h=>calY(h.m)===y).reduce((a,h)=>a+h.rev,0);const exempt=P.track==='tech'&&s.month-P.at<60;
@@ -895,6 +905,9 @@ const ACH=[
   {k:'lv10',n:'경영의 달인',d:'대표 레벨 10',f:()=>lvOf(s.F.xp)>=10},
   {k:'bonus100',n:'나누는 회사',d:'누적 성과급 100억',f:()=>(s.bonusPaid||0)>=1e10},
   {k:'streak',n:'10년 흑자',d:'120개월 연속 영업흑자',f:()=>s.okStreak>=120},
+  {k:'adr',n:'월가 입성',d:'미국 ADR 상장',f:()=>s.pub&&s.pub.adr&&s.pub.adr.on},
+  {k:'sq',n:'숏 스퀴즈',d:'초희귀 숏 스퀴즈 경험',f:()=>!!s.flags.squeezed},
+  {k:'shortage',n:'쇼티지의 승자',d:'초희귀 공급 쇼티지 경험',f:()=>!!s.flags.shortageAt},
   {k:'board',n:'이사회의 신임',d:'이사회 신뢰도 90 이상',f:()=>s.trust>=90},
 ];
 function checkAch(note){for(const a of ACH){if(!s.ach[a.k]&&a.f()){s.ach[a.k]=s.month;gainXP(40);note(`업적 달성: ${a.n} — ${a.d}`,'good');s.brand+=1;if(CELE[a.k])(s.flags.cele=s.flags.cele||[]).push(a.k)}}}
@@ -1073,6 +1086,16 @@ const EVENTS=[
   {w:()=>s.team.length>=4&&!(s.flags.famAt>s.month-5)?0.08:0,mk:()=>{s.flags.famAt=s.month;const e=pick(s.team),k=pick(['결혼','출산','부친상','모친상','이사','대학원 합격']);return {eb:'경조사',title:`${e.name}(${ROLES[e.role].name})의 ${k} 소식`,body:k.includes('상')?'갑작스러운 비보입니다. 회사의 대응을 팀원들이 지켜보고 있습니다.':'축하할 일입니다. 회사 차원에서 어떻게 챙길까요?',choices:[
     {t:'규정대로 경조금과 휴가',d:'50만원, 해당 직원 사기 +5',f:()=>{s.cash-=5e5;e.morale+=5;return '규정대로 처리했습니다.'}},
     {t:'대표가 직접 챙기고 넉넉하게',d:`200만원, 대표 체력 -2, 해당 직원 사기 +15, 팀 사기 +2`,f:()=>{s.cash-=2e6;s.F.energy-=2;e.morale+=15;s.team.forEach(x=>x.morale+=2);if(k==='대학원 합격')return `${e.name}이 "야간 대학원으로 다니며 계속 일하겠다"고 했습니다.`;return '팀원들이 "이런 회사 처음"이라며 감동했습니다.'}}]}}},
+  {w:()=>s.pub&&!s.flags.squeezed&&s.pub.price<s.pub.ipoPrice*0.9?0.006:0,mk:()=>{s.flags.squeezed=1;const x=rnd(1.8,3.2);return {eb:'초희귀 이벤트',title:'숏 스퀴즈! 공매도 세력이 한꺼번에 숏커버에 나섰습니다',body:`공매도 잔고가 유통주식의 20%를 넘은 상황에서 개인투자자들이 결집해 매수에 나섰습니다. 공매도 세력이 손실을 막으려 주식을 되사면서 주가가 며칠 만에 ${trim(x,1)}배로 치솟았습니다. 거품은 오래가지 않습니다.`,choices:[
+    {t:'이 틈에 대규모 유상증자',d:'고점에서 자금 조달, 토론방 분노',f:()=>{const P=s.pub;P.price*=x;P.mcap=P.price*P.shares;rightsIssue();s.flags.squeezeFade=2;boardCtx('rights');s.brand-=4;(s.flags.cele=s.flags.cele||[]).push('squeeze');return '역대 최고가에서 자금을 조달했습니다.'}},
+    {t:'보호예수 끝난 대표 지분 일부 매각',d:'개인 자산 대폭 증가, 경영권 약화',f:()=>{const P=s.pub;P.price*=x;P.mcap=P.price*P.shares;if(s.month>=P.lockup&&myPct()>0.08)blockSale(0.05);s.flags.squeezeFade=2;(s.flags.cele=s.flags.cele||[]).push('squeeze');return '인생이 바뀌는 금액을 현금화했습니다.'}},
+    {t:'아무것도 하지 않는다',d:'구경만 합니다. 몇 달 뒤 대부분 되돌림',f:()=>{const P=s.pub;P.price*=x;P.mcap=P.price*P.shares;s.flags.squeezeFade=3;boardCtx('theme');(s.flags.cele=s.flags.cele||[]).push('squeeze');return '토론방이 축제입니다. 차트가 하늘을 뚫었습니다.'}}]}}},
+  {w:()=>s.flags.launched&&s.month>12&&!(s.flags.shortageAt>s.month-60)?0.008:0,mk:()=>{s.flags.shortageAt=s.month;const it={mfg:'차량용 반도체·알루미늄 공급 대란으로 경쟁 부품사들이 납품을 못 하고 있습니다',commerce:'경쟁 제품들이 원재료 수급 문제로 줄줄이 품절됐습니다',app:'경쟁 앱들이 대규모 장애와 서비스 중단을 겪고 있습니다',saas:'글로벌 경쟁 SaaS가 국내 서비스를 갑자기 종료했습니다',market:'경쟁 플랫폼이 규제로 영업정지를 당했습니다'}[s.ind];return {eb:'초희귀 이벤트',title:'업계 공급 쇼티지 — 우리만 공급할 수 있습니다',body:`${it}. 고객들이 우리에게 몰려옵니다.`,choices:[
+    {t:'가격 15% 인상',d:'6개월간 객단가 상승, 일부 반감',f:()=>{s.price*=1.15;s.fx.arpu=(s.fx.arpu||1)*1.03;s.flags.boost=(s.flags.boost||0)+s.users*0.15+tam()*0.001;return '공급자 우위 시장. 가격을 올렸는데도 주문이 밀립니다.'}},
+    {t:'가격 유지, 점유율 확대',d:'신규 고객 대폭 유입, 브랜드 상승',f:()=>{s.flags.boost=(s.flags.boost||0)+s.users*0.4+tam()*0.004;s.brand+=8;s.rival.users*=0.85;return '"어려울 때 가격 안 올린 회사"라는 평판을 얻었습니다.'}}]}}},
+  {w:()=>s.flags.classAction?3:0,mk:()=>{delete s.flags.classAction;const amt=s.pub.mcap*rnd(0.005,0.02);return {eb:'미국 집단소송',title:'미국 투자자들이 증권 집단소송을 제기했습니다',body:`ADR 가격 급락 후 "투자 위험을 충분히 공시하지 않았다"는 주장입니다. 미국 로펌이 원고를 모으고 있습니다. 예상 합의금 ${won(amt)}.`,choices:[
+    {t:'합의',d:won(amt),f:()=>{s.cash-=amt;return '합의로 빠르게 정리했습니다.'}},
+    {t:'끝까지 다툰다',d:`변호사비 ${won(amt*0.3)}, 50% 승소`,f:()=>{s.cash-=amt*0.3;if(R()<0.5)return '소송이 기각됐습니다.';s.cash-=amt*1.5;s.brand-=5;return `패소. 배상금 ${won(amt*1.5)}.`}}]}}},
   {w:()=>s.markets.cn&&!s.flags.cnReg?0.08:0,mk:()=>({eb:'해외',title:'중국 당국이 외국 기업 데이터 규제를 강화했습니다',body:'현지 데이터센터 이전과 보안 심사가 의무화됐습니다.',choices:[
     {t:'현지화 투자',d:'5억원',f:()=>{s.flags.cnReg=1;s.cash-=5e8;return '심사를 통과했습니다.'}},
     {t:'중국 사업 철수',d:'진출 비용 손실',f:()=>{s.flags.cnReg=1;delete s.markets.cn;return '중국 법인을 청산했습니다.'}}]})},
@@ -1230,13 +1253,13 @@ function showEarn(d){
     const ch=document.getElementById('lvChg');ch.textContent=`${d.move>=0?'▲':'▼'} ${pc(Math.abs(d.move),1)}`;ch.className='mono '+(d.move>=0?'up':'down');verdict();
     if(document.getElementById('lvMsgs').children.length<10)for(let i=0;i<14;i++)chat(fill(pick(C_POOL[sent]),ctx),d.move>=0?'up':'down')};
   const verdict=()=>{const v=document.getElementById('lvVerdict');v.hidden=false;const lim=d.move>=0.299?'상한가':d.move<=-0.299?'하한가':'';
-    v.className='lv-verdict '+(d.move>=0.03?'up':d.move<=-0.03?'down':'');v.innerHTML=`<b>${d.sur>=0.05?'어닝 서프라이즈':d.sur<=-0.05?'어닝 쇼크':'컨센서스 부합'}</b>${lim?`<span class="lv-limit">${lim}</span>`:''}<span class="mono">${d.move>=0?'+':''}${pc(d.move,1)} · 대표 지분가치 ${d.move>=0?'+':'−'}${won(Math.abs(d.after-d.before)*s.pub.shares*myPct())}</span>`};
+    v.className='lv-verdict '+(d.move>=0.03?'up':d.move<=-0.03?'down':'');v.innerHTML=`<b>${esc(d.tag||(d.sur>=0.05?'어닝 서프라이즈':d.sur<=-0.05?'어닝 쇼크':'컨센서스 부합'))}</b>${lim?`<span class="lv-limit">${lim}</span>`:''}<span class="mono">${d.move>=0?'+':''}${pc(d.move,1)} · 대표 지분가치 ${d.move>=0?'+':'−'}${won(Math.abs(d.after-d.before)*s.pub.shares*myPct())}</span>`};
   burst(C_POOL.hype,14,0,3200,ctx);viewerRamp(lvViewers,lvViewers*3,0,3200);
   at(800,()=>document.getElementById('lvCd').textContent='3');at(1700,()=>document.getElementById('lvCd').textContent='2');at(2600,()=>document.getElementById('lvCd').textContent='1');
   at(3400,()=>{const c=document.getElementById('lvCd');c.textContent='공시 떴다!';c.classList.add('flash')});
   at(3400,()=>roll('lvRev',0,d.rev,1300,won));
   at(4900,()=>{document.getElementById('lvRevB').innerHTML=badge(d.sur)});
-  burst(C_POOL[sentKey(d.sur)],8,4900,1400,ctx,d.sur>=0?'up':'down');
+  burst(C_POOL[sentKey(d.sur)],6,4900,1400,ctx,d.sur>=0?'up':'down');burst(C_POOL[sentKey(d.opSur*0.4)],6,7000,800,ctx,d.opSur>=0?'up':'down');
   at(5600,()=>roll('lvOp',0,d.op,1200,won));
   at(7000,()=>{document.getElementById('lvOpB').innerHTML=badge(d.opSur)});
   const n=Math.round(clamp(18+Math.abs(d.move)*220,18,75));
@@ -1309,7 +1332,7 @@ function showCelebrate(d){
    <span class="eyebrow">${esc(d.eb||'마일스톤')}</span><h1 class="cele-h">${esc(d.t)}</h1><p>${esc(d.s)}</p><button class="btn primary" id="celeOk">계속</button>`;
   const b=document.getElementById('celeOk');b.onclick=()=>{sheet.classList.remove('wide','celeb');nextModal()};b.focus({preventScroll:true});
 }
-const CELE={size_medium:['중기업 진입','3년 평균 매출이 소기업 기준을 넘었습니다.'],size_mid:['중견기업 진입','중소기업을 졸업했습니다. 혜택은 줄지만 위상이 달라집니다.'],size_large:['대기업 반열','공정위 공시대상기업집단에 지정됐습니다. 이제 그룹입니다.'],size_chaebol:['상호출자제한기업집단','대한민국 대표 그룹 중 하나가 됐습니다.'],c1:['첫 고객','누군가 우리 제품에 처음으로 돈을 냈습니다. 이 순간을 잊지 마세요.'],m1:['월매출 1억','한 달에 1억을 버는 회사가 됐습니다.'],m10:['월매출 10억','연 매출 100억 페이스. 진짜 회사가 됐습니다.'],m100:['월매출 100억','연 매출 1,000억 클럽.'],
+const CELE={adr:['월가 입성','미국 증시에 상장했습니다. 이제 글로벌 기업입니다.'],squeeze:['숏 스퀴즈','공매도 세력이 백기를 들었습니다. 역사적인 폭등.'],size_medium:['중기업 진입','3년 평균 매출이 소기업 기준을 넘었습니다.'],size_mid:['중견기업 진입','중소기업을 졸업했습니다. 혜택은 줄지만 위상이 달라집니다.'],size_large:['대기업 반열','공정위 공시대상기업집단에 지정됐습니다. 이제 그룹입니다.'],size_chaebol:['상호출자제한기업집단','대한민국 대표 그룹 중 하나가 됐습니다.'],c1:['첫 고객','누군가 우리 제품에 처음으로 돈을 냈습니다. 이 순간을 잊지 마세요.'],m1:['월매출 1억','한 달에 1억을 버는 회사가 됐습니다.'],m10:['월매출 10억','연 매출 100억 페이스. 진짜 회사가 됐습니다.'],m100:['월매출 100억','연 매출 1,000억 클럽.'],
   pmf:['제품-시장 적합성','사용자 40% 이상이 "없어지면 매우 실망"이라고 답했습니다.'],A:['시리즈 A 클로징','이제 본격적인 성장 게임입니다.'],ipo:['상장사 대표','종목 코드가 생겼습니다.'],uni:['유니콘','기업가치 1조원. 대한민국 유니콘 명단에 이름을 올렸습니다.'],deca:['데카콘','기업가치 10조원.'],top10:['스타트업 TOP 10','국내 스타트업 기업가치 순위 10위 안에 들었습니다.'],no1:['국내 1위 스타트업','기업가치 기준 국내 스타트업 1위입니다.']};
 
 /* ---- 그로스 실험실 ---- */
@@ -1426,6 +1449,7 @@ function aiManage(){
   const cl=s.certs;if(cl.lab==='none'&&s.team.filter(e=>e.role==='dev'||e.role==='data').length>=2){s.cash-=5e5;s.certLeft2.lab=1;cl.lab='review'}
   if(cl.venture==='none'&&(s.rounds.reduce((a,r)=>a+r.amt,0)>=5e7||s.gov.kibo==='done')){s.cash-=3e5;s.certLeft2.venture=1;cl.venture='review'}
   if(s.ind!=='mfg'&&cl.isms==='none'&&ismsReq()&&s.cash>3e8){s.cash-=1.5e8;s.certLeft2.isms=6;cl.isms='review'}
+  if(s.pub&&!s.pub.adr&&adrReq().ok&&!(s.flags.adrRetry>s.month)&&s.cash>5e10){startADR('NASDAQ');aiLog('나스닥 ADR 상장 준비 착수')}
   if(!s.ipo&&!s.pub){const q=ipoReq();if(!q.retry){if(q.gen){startIPO('gen');aiLog('일반 상장 준비 착수')}else if(q.tech){startIPO('tech');aiLog('기술특례 상장 준비 착수')}}}
 }
 function aiLog(t){addLog('[AI] '+t)}
@@ -1510,6 +1534,30 @@ function hofUpdate(final){if(!s)return;const h=hofGet();const v=compVal(),w=netW
   const sz=sizeIdx(s.size||'micro');if(h.bestSize==null||sz>h.bestSize.i)h.bestSize={i:sz,co:s.co};
   if(final){h.games=(h.games||0)+1;h.ends=h.ends||{};h.ends[s.ended.kind]=(h.ends[s.ended.kind]||0)+1;h.achMax=Math.max(h.achMax||0,Object.keys(s.ach).length);h.lastRuns=[{co:s.co,ind:ind().name,end:s.ended.title,w:s.ended.wealth,m:s.ended.m},...(h.lastRuns||[])].slice(0,8)}
   hofSet(h)}
+
+
+/* ---- 미국 ADR 상장 ---- */
+function adrReq(){const P=s.pub;if(!P)return {ok:false};const ttm=s.hist.slice(-12).reduce((a,h)=>a+h.rev,0);const us=s.markets.us&&s.markets.us.p>=0.5;
+  return {mcap:P.mcap>=1e12,rev:ttm>=1e11,us,q:s.quality>=80,ttm,ok:P.mcap>=1e12&&ttm>=1e11&&us&&s.quality>=80}}
+function startADR(ex){s.pub.adr={ex,stage:'prep',left:9,on:false};addLog(`${ex} ADR 상장 준비 착수. 미국 주관사 선정, US GAAP 전환 감사, SEC F-1 등록 준비.`)}
+function adrTick(P,note){const A=P.adr;if(!A)return;
+  if(A.on){s.cash-=1e8;if(P.prev&&P.price/P.prev<0.7&&!(s.flags.classAt>s.month-24)){s.flags.classAt=s.month;s.flags.classAction=1}return}
+  s.cash-=2e8;A.left--;
+  if(A.left===3&&A.stage==='prep'){A.stage='sec';note('SEC에 F-1 등록신고서 제출. 미국 증권거래위원회 심사 대기.')}
+  if(A.left<=0){const ok=R()<clamp(0.55+s.quality/400+(s.climate>1?0.1:0)+(s.trust-55)/300,0.2,0.9);
+    if(!ok){note('SEC 코멘트 대응이 길어지고 미국 시장 분위기가 나빠져 ADR 상장을 연기했습니다. 6개월 후 재도전할 수 있습니다.','bad');P.adr=null;s.flags.adrRetry=s.month+6;return}
+    const raise=P.mcap*0.08*rnd(0.95,1.2),pop=rnd(-0.1,0.5)*(s.climate>1.05?1.3:1);
+    P.shares*=1.08;P.price*=1+pop*0.5;P.mcap=P.price*P.shares;s.cash+=raise*0.93;s.brand+=15;s.trust+=8;A.on=true;A.at=s.month;A.stage='listed';A.ratio=10;
+    for(const c of s.cap)c.pct/=1.08;const pb=s.cap.find(c=>c.t==='pub');if(pb)pb.pct+=0.08/1.08;
+    (s.flags.cele=s.flags.cele||[]).push('adr');gainXP(200);
+    note(`${A.ex} 상장! 티커 ${tickerOf()}. ADS 공모로 ${won(raise)} 조달, 첫날 ${sgn(pop)}${pc(pop,0)}. 글로벌 투자자 유입으로 밸류에이션 프리미엄이 붙습니다.`,'good')}}
+function tickerOf(){const w=s.co.replace(/주식회사|\(주\)|\s/g,'');let t='';for(const ch of w){const c=ch.charCodeAt(0);if(c>=0xAC00&&c<=0xD7A3){t+='GKNDRMBSOJCKTPH'[Math.floor((c-0xAC00)/588)%15]}else if(/[A-Za-z]/.test(ch))t+=ch.toUpperCase();if(t.length>=4)break}return (t+'XQZ').slice(0,4)}
+function adrPanel(){const P=s.pub,A=P.adr,q=adrReq();const chk=(ok,t_)=>`<li class="${ok?'good':'muted'}">${ok?'충족':'미충족'} · ${t_}</li>`;
+  if(A&&A.on){const ads=P.price*A.ratio/s.usd;return `<div class="row between"><b>${A.ex}: ${tickerOf()}</b><span class="mono ${P.price>=(P.prev||P.price)?'up':'down'}">$${trim(ads,2)} / ADS</span></div><p class="note">1 ADS = 보통주 ${A.ratio}주, 원/달러 ${num(s.usd)}. 미국 상장 유지비(SOX 내부통제, D&O 보험, 미국 IR) 월 1억. 주가가 한 달에 30% 넘게 빠지면 미국 집단소송 위험이 있습니다.</p>`}
+  if(A)return `<p>${A.ex} ADR 상장 준비 중 · ${A.stage==='sec'?'SEC 심사':'US GAAP 감사·주관사 실사'} · ${A.left}개월 남음. 월 2억 지출.</p>`;
+  return `<p class="note">국내 상장 후 미국 예탁증서(ADR)로 나스닥·뉴욕증권거래소에 추가 상장합니다. 성공하면 글로벌 밸류에이션 프리미엄(+25%)과 자금 조달, 브랜드 상승. 준비 9개월, 월 2억.</p>
+   <ul class="note" style="margin:6px 0;padding-left:18px">${chk(q.mcap,'시가총액 1조 이상')}${chk(q.rev,`최근 12개월 매출 1,000억 이상 (현재 ${won(q.ttm||0)})`)}${chk(q.us,'미국 시장 진출 후 안착 50% 이상')}${chk(q.q,'제품 완성도 80 이상')}</ul>
+   <div class="row"><button class="btn sm ${q.ok?'primary':''}" data-adr="NASDAQ" ${q.ok&&!(s.flags.adrRetry>s.month)?'':'disabled'}>나스닥 ADR 상장 준비</button><button class="btn sm" data-adr="NYSE" ${q.ok&&!(s.flags.adrRetry>s.month)?'':'disabled'}>뉴욕증권거래소 ADR 상장 준비</button></div>`}
 
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
@@ -1853,7 +1901,8 @@ function certRows(){
     ['lab','기업부설연구소','연구전담요원 2명 이상(개발자·데이터). 연구원 인건비 25% 법인세 세액공제, 전문연구요원(병역특례) 채용 가능. 수수료 50만.',rnd>=2],
     ...(s.ind!=='mfg'?[['isms','ISMS-P 인증','매출 100억 또는 이용자 100만 이상이면 의무. 1.5억, 6개월. 보안 사고 위험 감소.'+(ismsReq()?' <b class="bad">현재 의무 대상</b>':''),s.quality>=60]]:[])];
   return rows.map(([k,n,d,ok])=>`<tr><td><b>${n}</b><div class="note">${d}</div></td><td class="r">${C[k]==='done'?'<span class="chip good">보유</span>':C[k]==='review'?'<span class="chip">심사 중</span>':`<button class="btn sm" data-cert2="${k}" ${ok?'':'disabled'}>신청</button>`}</td></tr>`).join('')}
-function stockPanel(){
+function stockPanel(){return stockPanel0()+`<div class="panel" style="padding:12px"><b>미국 ADR 상장</b>${adrPanel()}</div>`}
+function stockPanel0(){
   const P=s.pub,me=myPct(),locked=s.month<P.lockup,ttmOp=s.hist.slice(-12).reduce((a,h)=>a+(h.op||0),0),per=ttmOp>0?P.mcap/(ttmOp*0.8):0;
   const y=calY(s.month)-1,canDiv=(s.yp[y]||0)>0&&s.flags.divY!==y&&s.cash>(s.yp[y]||0)*0.2;
   const kospiOk=P.market==='KOSDAQ'&&(P.mcap>=1e12||(s.hist.slice(-12).reduce((a,h)=>a+h.rev,0)>=1e11&&P.mcap>=2e11));
@@ -2123,6 +2172,7 @@ app.addEventListener('click',e=>{
   if(d.life){lifeAct(d.life);render();return}
   if(d.exp){runExp(d.exp);render();return}
   if(d.lc){startLiveCommerce(d.lc);return}
+  if(d.adr){startADR(d.adr);render();return}
   if(d.buy!=null){buyPeer(+d.buy);render();return}
   if(d.cult){const had=s.culture&&s.culture!=='none';s.culture=d.cult;s.cultAt=s.month;if(had)s.team.forEach(e=>e.morale-=10);addLog(`기업 문화 ${had?'전환':'정립'}: ${CULTURES[d.cult].n}.`);toast(`기업 문화: ${CULTURES[d.cult].n}`,'good');sanitize();render();return}
   if(d.tev){teamEv(d.tev);render();return}
