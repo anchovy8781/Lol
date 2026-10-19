@@ -340,7 +340,7 @@ function migrate(o){if(!o)return o;
   o.ch=o.ch||{search:(o.ad||0)*0.5,social:(o.ad||0)*0.5,video:0,content:o.brandAd||0,offline:0};o.seo=o.seo||0;o.fx=o.fx||{};
   o.road=o.road||{cur:null,prog:0,share:0.3,done:[]};o.coh=o.coh||[];o.certs=o.certs||{venture:'none',lab:'none',isms:'none'};o.certLeft2=o.certLeft2||{};
   o.rnd=o.rnd||{};o.taxCredit=o.taxCredit||0;o.rate=o.rate??2.75;o.usd=o.usd??1380;o.annual=o.annual||0;o.deferred=o.deferred||0;
-  o.flags=o.flags||{};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
+  o.flags=o.flags||{};o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
   for(const e of o.team||[]){if(!e.trait)e.trait='none';e.mil=e.mil||0;e.leave=e.leave||0}return o}
 function load(){try{const t=localStorage.getItem(KEY);return t?migrate(JSON.parse(t)):null}catch(e){return null}}
 function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
@@ -422,7 +422,7 @@ function fairVal(){
   const userVal=s.ind==='app'?s.users*2500:0;
   const assets=s.mfg?s.mfg.lines*LINE.capex*0.6+s.mfg.siteVal:0;
   const mk=Object.keys(s.markets).length*2e9*(s.quality/100);
-  let v=(Math.max(teamVal,revVal+userVal*0.5,userVal)+assets+mk)*s.climate*(0.85+s.trust/400);
+  let v=(Math.max(teamVal,revVal+userVal*0.5,userVal)+assets+mk)*s.climate*(0.85+s.trust/400)*(1+esgAdj());
   if(deadEquity()>0.12)v*=0.8;
   return v;
 }
@@ -679,6 +679,8 @@ function simulate(){
   s.month++;
   gainXP(3+(growth()>0.05?4:0)+(s.last&&s.last.op>0?3:0));
   if(calM(s.month)===3||!s.size)sizeTick(note);
+  if(calM(s.month)===3)auditTick(note);
+  esgTick(note);
   if(calM(s.month)===1)yearEnd(note);
   if(s.month%6===0)hofUpdate(false);
   boardTick(note);
@@ -714,7 +716,7 @@ function fireEmp(e){
 
 /* ============ 투자 ============ */
 function startRound(i){const r=ROUNDS[i];s.fund={i,prog:0,months:0,offers:null,dd:0,chosen:null,msg:''};addLog(`${r.name} 라운드 시작. 목표 ${won(r.amt[0])}~${won(r.amt[1])}.`)}
-function attract(i){let a=fairVal()/ROUNDS[i].th*D().attr*(s.certs.venture==='done'?1.05:1)*(s.rate>3.5?0.92:1);if(i>=1&&s.pmf<30)a*=0.7;if(i>=3&&growth()<0.04)a*=0.75;if(deadEquity()>0.12)a*=0.8;return a}
+function attract(i){let a=(s.flags.auditBad>s.month-12?0.6:1)*fairVal()/ROUNDS[i].th*D().attr*(s.certs.venture==='done'?1.05:1)*(s.rate>3.5?0.92:1);if(i>=1&&s.pmf<30)a*=0.7;if(i>=3&&growth()<0.04)a*=0.75;if(deadEquity()>0.12)a*=0.8;return a}
 function fundTick(A,note){
   const f=s.fund,r=ROUNDS[f.i];
   if(f.dd>0){f.dd--;if(f.dd===0){
@@ -803,6 +805,20 @@ function listCompany(track,note){
   note(`코스닥 상장! 수요예측 경쟁률 ${num(ratio)}:1, 공모가 ${num(price)}원, 공모금액 ${won(raise)}. 첫날 종가 ${num(price*pop)}원 (${sgn(pop-1)}${pc(pop-1,0)}).`,'good');
   note(`상장으로 우선주(RCPS)가 보통주로 전환되었습니다. 최대주주 보호예수 12개월.`);
 }
+function consensus(Q,P){
+  const n=Q.length,last=Q[n-1];
+  const qoq=[];for(let i=Math.max(1,n-3);i<n;i++)if(Q[i-1].q>0)qoq.push(Q[i].q/Q[i-1].q-1);
+  const qoqT=qoq.length?clamp(qoq.reduce((a,b)=>a+b,0)/qoq.length,-0.15,0.25):clamp(growth(6)*3,-0.1,0.25);
+  let rev=last.q*(1+qoqT*0.7);
+  const same=n>=4?Q[n-4]:null;
+  if(same&&same.q>0){const yoy=[];for(let i=Math.max(4,n-4);i<n;i++)if(Q[i-4].q>0)yoy.push(Q[i].q/Q[i-4].q-1);
+    yoy.sort((a,b)=>a-b);const g=clamp(yoy[Math.floor(yoy.length/2)],-0.4,1.2);rev=0.85*same.q*(1+g)+0.15*rev}
+  // 애널리스트 학습: 직전 분기 오차만큼 눈높이 조정
+  P.bias=clamp((P.bias||1)*(1+clamp(P.lastSur||0,-0.25,0.25)*0.6),0.7,1.3);
+  rev*=P.bias*rnd(0.96,1.0);
+  const mg=Q.slice(-2).reduce((a,x)=>a+(x.q>0?x.op/x.q:0),0)/Math.min(2,n);
+  const op=rev*(mg+(mg<0?0.008:0.002))*clamp((P.opBias||1)*(1+clamp(P.lastOpSur||0,-0.3,0.3)*0.5),0.7,1.3)*rnd(0.96,1.0);
+  return {rev,op}}
 function earnTag(sur,op,score){
   if(sur>=0.03&&op>=0.03)return score>=0.12?'어닝 서프라이즈':'호실적';
   if(sur<=-0.03&&op<=-0.03)return score<=-0.12?'어닝 쇼크':'실적 부진';
@@ -810,7 +826,8 @@ function earnTag(sur,op,score){
   if(sur>0&&op<0)return score>=0?'외형 성장 (이익은 미달)':'엇갈린 실적 (매출 상회, 이익 미달)';
   return '컨센서스 부합'}
 function stockTick(note,cal){
-  const P=s.pub;const fund=fairVal()*1.15*(P.adr&&P.adr.on?1.25:1);P.prev=P.price;
+  const P=s.pub;P.prev=P.price;if(P.halt){haltTick(P,note);return}
+  const fund=fairVal()*1.15*(P.adr&&P.adr.on?1.25:1);
   adrTick(P,note);
   const di=rnd(-0.05,0.055)+(s.climate-1)*0.03;P.idx*=Math.exp(di);
   let drift=Math.log(fund/P.mcap)*0.12+di*1.2+rnd(-0.08,0.08)+(P.shock||0);P.shock=0;
@@ -820,7 +837,7 @@ function stockTick(note,cal){
   if(s.flags.themeCrash===s.month){P.price*=0.72;P.mcap=P.price*P.shares;note(`${s.flags.themeName} 테마 거품 붕괴. 주가 급락.`,'bad');boardCtx('theme')}
   if([3,6,9,12].includes(cal)){const q=s.hist.slice(-3).reduce((a,h)=>a+h.rev,0),opq=s.hist.slice(-3).reduce((a,h)=>a+(h.op||0),0);
     if(P.cons){const sur=q/P.cons-1,opSur=(opq-P.opCons)/Math.max(Math.abs(P.opCons),q*0.05,1e7);
-      const opS=clamp(opSur,-0.8,0.8),score=sur*0.9+opS*0.35;
+      const opS=clamp(opSur,-0.8,0.8),score=sur*0.9+opS*0.35;P.lastSur=sur;P.lastOpSur=opS;
       const tag=earnTag(sur,opS,score);
       let mv=score*1.3+rnd(-0.03,0.03);if(s.flags.promise>s.month-6&&score<0)mv-=0.05;if(s.flags.prove>s.month-6&&score>0)mv+=0.03;mv=clamp(mv,-0.3,0.3);
       const before=P.price,after=Math.max(100,P.price*(1+mv));const path=pathTo(before,after,28,0.012);P.price=after;P.mcap=P.price*P.shares;
@@ -828,10 +845,10 @@ function stockTick(note,cal){
       s.flags.earnShow={label,rev:q,cons:P.cons,op:opq,opCons:P.opCons,sur,opSur,score,tag,before,after,move:mv,path};
       if(score>=0.04){boardCtx('earnBeat');s.trust+=4}else if(score<=-0.04){boardCtx('earnMiss');s.trust-=4;if(s.flags.promise>s.month-6)s.trust-=6}
       note(`${label} 실적: 매출 ${won(q)} (컨센서스 대비 ${sgn(sur)}${pc(sur,0)}), 영업이익 ${won(opq)} (${sgn(opS)}${pc(opS,0)}). ${tag}. 주가 ${sgn(mv)}${pc(mv,1)}${Math.abs(mv)>=0.299?(mv>0?' 상한가':' 하한가'):''}.`,score>=0.04?'good':score<=-0.04?'bad':'')}
-    P.cons=q*(1+clamp(growth()*3,0.02,0.6)*0.85);P.opCons=opq>0?opq*(1+clamp(growth()*3,0.02,0.5)):opq*0.7+q*0.02}
+    P.qs=P.qs||[];P.qs.push({q,op:opq});if(P.qs.length>12)P.qs.shift();const c=consensus(P.qs,P);P.cons=c.rev;P.opCons=c.op}
   if(s.flags.divPromise&&calY(s.month)>s.flags.divPromise&&cal===4){if(s.flags.divY!==calY(s.month)-1){s.trust-=10;P.price*=0.93;P.mcap=P.price*P.shares;note('주총에서 약속한 배당을 지키지 않아 주가가 하락했습니다.','bad')}delete s.flags.divPromise}
   if(cal===3&&s.month-P.at>=10){const y=calY(s.month)-1;const yr=s.hist.filter(h=>calY(h.m)===y).reduce((a,h)=>a+h.rev,0);const exempt=P.track==='tech'&&s.month-P.at<60;
-    if(yr<3e9&&!exempt){P.warn++;P.price*=0.7;P.mcap=P.price*P.shares;if(P.warn>=2){note(`2년 연속 매출 30억 미만. 상장폐지 결정.`,'bad');endGame('delist',P.mcap*0.25);return}note(`${y}년 매출 ${won(yr)} — 코스닥 매출 요건(30억) 미달로 관리종목 지정. 내년에도 미달 시 상장폐지.`,'bad')}
+    if(yr<3e9&&!exempt){P.warn++;P.price*=0.7;P.mcap=P.price*P.shares;if(P.warn>=2){delistNow('2년 연속 매출 30억 미만, 상장폐지 결정',note);return}note(`${y}년 매출 ${won(yr)} — 코스닥 매출 요건(30억) 미달로 관리종목 지정. 내년에도 미달 시 상장폐지.`,'bad')}
     else if(P.warn){P.warn=0;note('관리종목 지정 해제.','good')}}
   genBoard(P.price/P.prev-1);
 }
@@ -908,6 +925,10 @@ const ACH=[
   {k:'adr',n:'월가 입성',d:'미국 ADR 상장',f:()=>s.pub&&s.pub.adr&&s.pub.adr.on},
   {k:'sq',n:'숏 스퀴즈',d:'초희귀 숏 스퀴즈 경험',f:()=>!!s.flags.squeezed},
   {k:'shortage',n:'쇼티지의 승자',d:'초희귀 공급 쇼티지 경험',f:()=>!!s.flags.shortageAt},
+  {k:'esgA',n:'착한 기업',d:'ESG 등급 A+',f:()=>s.esg&&s.esg.grade==='A+'},
+  {k:'haltok',n:'기사회생',d:'거래정지 후 거래 재개',f:()=>!!s.flags.haltSurvived},
+  {k:'relist',n:'다시 상장',d:'상장폐지 후 재상장',f:()=>s.delisted&&!!s.pub},
+  {k:'audit10',n:'깨끗한 장부',d:'외부감사 적정의견 10년 연속',f:()=>s.audit&&s.audit.hist&&s.audit.hist.length>=10&&s.audit.hist.slice(-10).every(h=>h.op==='적정')},
   {k:'board',n:'이사회의 신임',d:'이사회 신뢰도 90 이상',f:()=>s.trust>=90},
 ];
 function checkAch(note){for(const a of ACH){if(!s.ach[a.k]&&a.f()){s.ach[a.k]=s.month;gainXP(40);note(`업적 달성: ${a.n} — ${a.d}`,'good');s.brand+=1;if(CELE[a.k])(s.flags.cele=s.flags.cele||[]).push(a.k)}}}
@@ -1096,6 +1117,12 @@ const EVENTS=[
   {w:()=>s.flags.classAction?3:0,mk:()=>{delete s.flags.classAction;const amt=s.pub.mcap*rnd(0.005,0.02);return {eb:'미국 집단소송',title:'미국 투자자들이 증권 집단소송을 제기했습니다',body:`ADR 가격 급락 후 "투자 위험을 충분히 공시하지 않았다"는 주장입니다. 미국 로펌이 원고를 모으고 있습니다. 예상 합의금 ${won(amt)}.`,choices:[
     {t:'합의',d:won(amt),f:()=>{s.cash-=amt;return '합의로 빠르게 정리했습니다.'}},
     {t:'끝까지 다툰다',d:`변호사비 ${won(amt*0.3)}, 50% 승소`,f:()=>{s.cash-=amt*0.3;if(R()<0.5)return '소송이 기각됐습니다.';s.cash-=amt*1.5;s.brand-=5;return `패소. 배상금 ${won(amt*1.5)}.`}}]}}},
+  {w:()=>calM(s.month)===2&&auditTarget()&&!(s.flags.preAuditY===calY(s.month))&&(s.flags.bluff||esgBase().g<45)?2:0,mk:()=>{s.flags.preAuditY=calY(s.month);const adj=Math.max(1e7,lastRev()*rnd(0.5,1.5));return {eb:'외부감사',title:'회계법인이 결산 수정을 요구합니다',body:`감사인이 매출 인식 시점과 충당금 설정에 문제를 제기했습니다. 수정하면 지난해 이익이 ${won(adj)} 줄어듭니다. 거부하면 감사의견이 나빠질 수 있습니다.`,choices:[
+    {t:'감사인 의견대로 수정',d:`이익 ${won(adj)} 감소, 감사 위험 해소`,f:()=>{const y=calY(s.month)-1;s.yp[y]=(s.yp[y]||0)-adj;s.flags.bluff=0;if(s.esg)s.esg.inv.ethics=s.esg.inv.ethics;return '재무제표를 수정했습니다. 감사인과의 관계가 좋아졌습니다.'}},
+    {t:'우리 회계처리가 맞다고 반박',d:'한정 이상 의견 위험 상승',f:()=>{s.flags.bluff=(s.flags.bluff||0)+1;return '감사인이 "그렇다면 의견에 반영하겠다"고 합니다.'}}]}}},
+  {w:()=>s.pub&&!s.pub.halt&&!(s.flags.embAt>s.month-60)?(esgBase().g<40?0.006:0.002):0,mk:()=>{s.flags.embAt=s.month;const amt=Math.max(5e8,s.cash*rnd(0.02,0.08));return {eb:'횡령·배임',title:`자금팀장이 회사 자금 ${won(amt)}을 횡령한 사실이 드러났습니다`,body:'자기자본의 5%가 넘으면 공시 의무가 있고, 한국거래소는 상장적격성 심사를 위해 거래를 정지합니다.',choices:[
+    {t:'즉시 공시하고 고소',d:'거래정지 후 상장적격성 심사, 내부통제 개선 시 재개',f:()=>{s.cash-=amt;startHalt('임직원 횡령 공시',6,true);if(s.esg)s.esg.inv.ethics=s.esg.inv.ethics??s.month;return '즉시 공시했습니다. 내부통제를 전면 개편합니다.'}},
+    {t:'조용히 회수를 시도하고 공시를 미룬다',d:'발각 시 상장폐지 위험',f:()=>{s.cash-=amt*0.5;if(R()<0.6){s.flags.embezzle=1;if(s.esg)s.esg.pen=(s.esg.pen||0)+8;startHalt('횡령 은폐 의혹, 공시 지연',12,true);return '언론 보도로 은폐 사실이 드러났습니다. 거래정지.'}return '절반을 회수하고 조용히 넘어갔습니다... 이번에는.'}}]}}},
   {w:()=>s.markets.cn&&!s.flags.cnReg?0.08:0,mk:()=>({eb:'해외',title:'중국 당국이 외국 기업 데이터 규제를 강화했습니다',body:'현지 데이터센터 이전과 보안 심사가 의무화됐습니다.',choices:[
     {t:'현지화 투자',d:'5억원',f:()=>{s.flags.cnReg=1;s.cash-=5e8;return '심사를 통과했습니다.'}},
     {t:'중국 사업 철수',d:'진출 비용 손실',f:()=>{s.flags.cnReg=1;delete s.markets.cn;return '중국 법인을 청산했습니다.'}}]})},
@@ -1332,7 +1359,7 @@ function showCelebrate(d){
    <span class="eyebrow">${esc(d.eb||'마일스톤')}</span><h1 class="cele-h">${esc(d.t)}</h1><p>${esc(d.s)}</p><button class="btn primary" id="celeOk">계속</button>`;
   const b=document.getElementById('celeOk');b.onclick=()=>{sheet.classList.remove('wide','celeb');nextModal()};b.focus({preventScroll:true});
 }
-const CELE={adr:['월가 입성','미국 증시에 상장했습니다. 이제 글로벌 기업입니다.'],squeeze:['숏 스퀴즈','공매도 세력이 백기를 들었습니다. 역사적인 폭등.'],size_medium:['중기업 진입','3년 평균 매출이 소기업 기준을 넘었습니다.'],size_mid:['중견기업 진입','중소기업을 졸업했습니다. 혜택은 줄지만 위상이 달라집니다.'],size_large:['대기업 반열','공정위 공시대상기업집단에 지정됐습니다. 이제 그룹입니다.'],size_chaebol:['상호출자제한기업집단','대한민국 대표 그룹 중 하나가 됐습니다.'],c1:['첫 고객','누군가 우리 제품에 처음으로 돈을 냈습니다. 이 순간을 잊지 마세요.'],m1:['월매출 1억','한 달에 1억을 버는 회사가 됐습니다.'],m10:['월매출 10억','연 매출 100억 페이스. 진짜 회사가 됐습니다.'],m100:['월매출 100억','연 매출 1,000억 클럽.'],
+const CELE={delist:['상장폐지','종목 코드가 사라졌습니다. 그래도 회사는 살아 있습니다. 다시 일어설 수 있을까요?'],adr:['월가 입성','미국 증시에 상장했습니다. 이제 글로벌 기업입니다.'],squeeze:['숏 스퀴즈','공매도 세력이 백기를 들었습니다. 역사적인 폭등.'],size_medium:['중기업 진입','3년 평균 매출이 소기업 기준을 넘었습니다.'],size_mid:['중견기업 진입','중소기업을 졸업했습니다. 혜택은 줄지만 위상이 달라집니다.'],size_large:['대기업 반열','공정위 공시대상기업집단에 지정됐습니다. 이제 그룹입니다.'],size_chaebol:['상호출자제한기업집단','대한민국 대표 그룹 중 하나가 됐습니다.'],c1:['첫 고객','누군가 우리 제품에 처음으로 돈을 냈습니다. 이 순간을 잊지 마세요.'],m1:['월매출 1억','한 달에 1억을 버는 회사가 됐습니다.'],m10:['월매출 10억','연 매출 100억 페이스. 진짜 회사가 됐습니다.'],m100:['월매출 100억','연 매출 1,000억 클럽.'],
   pmf:['제품-시장 적합성','사용자 40% 이상이 "없어지면 매우 실망"이라고 답했습니다.'],A:['시리즈 A 클로징','이제 본격적인 성장 게임입니다.'],ipo:['상장사 대표','종목 코드가 생겼습니다.'],uni:['유니콘','기업가치 1조원. 대한민국 유니콘 명단에 이름을 올렸습니다.'],deca:['데카콘','기업가치 10조원.'],top10:['스타트업 TOP 10','국내 스타트업 기업가치 순위 10위 안에 들었습니다.'],no1:['국내 1위 스타트업','기업가치 기준 국내 스타트업 1위입니다.']};
 
 /* ---- 그로스 실험실 ---- */
@@ -1449,6 +1476,8 @@ function aiManage(){
   const cl=s.certs;if(cl.lab==='none'&&s.team.filter(e=>e.role==='dev'||e.role==='data').length>=2){s.cash-=5e5;s.certLeft2.lab=1;cl.lab='review'}
   if(cl.venture==='none'&&(s.rounds.reduce((a,r)=>a+r.amt,0)>=5e7||s.gov.kibo==='done')){s.cash-=3e5;s.certLeft2.venture=1;cl.venture='review'}
   if(s.ind!=='mfg'&&cl.isms==='none'&&ismsReq()&&s.cash>3e8){s.cash-=1.5e8;s.certLeft2.isms=6;cl.isms='review'}
+  if(s.pub&&s.esg&&s.esg.reportY!==calY(s.month)&&calM(s.month)>=4&&calM(s.month)<=6&&s.cash>sc(3e7)*5){esgReport();aiLog('지속가능경영보고서 발간')}
+  if(s.pub&&s.esg&&s.cash>sc(2e8)*20){const it=ESG_INV.find(x=>x.a==='G'&&s.esg.inv[x.k]==null)||ESG_INV.find(x=>s.esg.inv[x.k]==null);if(it){esgInvest(it.k);aiLog(`ESG 투자: ${it.n}`)}}
   if(s.pub&&!s.pub.adr&&adrReq().ok&&!(s.flags.adrRetry>s.month)&&s.cash>5e10){startADR('NASDAQ');aiLog('나스닥 ADR 상장 준비 착수')}
   if(!s.ipo&&!s.pub){const q=ipoReq();if(!q.retry){if(q.gen){startIPO('gen');aiLog('일반 상장 준비 착수')}else if(q.tech){startIPO('tech');aiLog('기술특례 상장 준비 착수')}}}
 }
@@ -1559,6 +1588,69 @@ function adrPanel(){const P=s.pub,A=P.adr,q=adrReq();const chk=(ok,t_)=>`<li cla
    <ul class="note" style="margin:6px 0;padding-left:18px">${chk(q.mcap,'시가총액 1조 이상')}${chk(q.rev,`최근 12개월 매출 1,000억 이상 (현재 ${won(q.ttm||0)})`)}${chk(q.us,'미국 시장 진출 후 안착 50% 이상')}${chk(q.q,'제품 완성도 80 이상')}</ul>
    <div class="row"><button class="btn sm ${q.ok?'primary':''}" data-adr="NASDAQ" ${q.ok&&!(s.flags.adrRetry>s.month)?'':'disabled'}>나스닥 ADR 상장 준비</button><button class="btn sm" data-adr="NYSE" ${q.ok&&!(s.flags.adrRetry>s.month)?'':'disabled'}>뉴욕증권거래소 ADR 상장 준비</button></div>`}
 
+
+/* ============ 외부감사 · 거래정지 · 상장폐지 · ESG ============ */
+const OUTLET_ESG='한국ESG평가원';
+function esgBase(){const E=s.esg||(s.esg={inv:{},grade:null,reportY:null,pen:0});const inv=k=>E.inv[k]?1:0;
+  const mor=s.team.length?s.team.reduce((a,e)=>a+e.morale,0)/s.team.length:60;const rv=(s.reviews||[]).length?s.reviews.reduce((a,r)=>a+r.st,0)/s.reviews.length:3;
+  const e=clamp((s.mfg?22:45)+inv('re100')*25+inv('carbon')*15+(s.mfg&&s.mfg.smart?5:0),0,100);
+  const so=clamp(15+mor*0.35+rv*4+(s.flags.safe?8:0)+(s.bonus&&s.bonus.cycle!=='none'?5:0)+(s.life&&s.life.give!=null?4:0)+inv('safety')*12+inv('partner')*12,0,100);
+  const au=(s.audit||{}).last;const g=clamp(20+s.trust*0.25+(au&&au.op==='적정'?10:au?-15:0)+(byRole('ops').length?6:0)-(s.flags.bluff?10:0)-(E.pen||0)*1.5+inv('board')*18+inv('audit')*15+inv('ethics')*8,0,100);
+  return {e,s:so,g,tot:(e+so+g)/3}}
+const esgGrade=t=>t>=80?'A+':t>=70?'A':t>=60?'B+':t>=50?'B':t>=40?'C':'D';
+const ESG_ADJ={'A+':0.06,'A':0.04,'B+':0.01,'B':0,'C':-0.02,'D':-0.05};
+function esgAdj(){return s.esg&&s.esg.grade?ESG_ADJ[s.esg.grade]:0}
+const ESG_INV=[{k:'re100',a:'E',n:'재생에너지 전환 (RE100 가입)',b:3e8},{k:'carbon',a:'E',n:'탄소 배출 측정·감축 설비',b:1.5e8},{k:'safety',a:'S',n:'안전보건경영시스템 (ISO 45001)',b:8e7},{k:'partner',a:'S',n:'협력사 상생 펀드',b:2e8},{k:'board',a:'G',n:'사외이사 과반·이사회 독립성',b:1e8},{k:'audit',a:'G',n:'감사위원회·내부회계관리제도 고도화',b:1.5e8},{k:'ethics',a:'G',n:'윤리경영·내부고발 시스템',b:5e7}];
+function esgInvest(k){const it=ESG_INV.find(x=>x.k===k),c=sc(it.b);if(s.cash<c)return;s.cash-=c;s.esg.inv[k]=s.month;if(k==='board')s.trust+=4;addLog(`ESG 투자: ${it.n} (${won(c)}).`)}
+function esgReport(){const c=sc(3e7);if(s.cash<c)return;s.cash-=c;const B=esgBase(),g=esgGrade(B.tot+rnd(-3,3));const old=s.esg.grade;s.esg.grade=g;s.esg.reportY=calY(s.month);s.esg.hist=(s.esg.hist||[]).concat([{y:calY(s.month),g,e:B.e,s:B.s,g2:B.g}]).slice(-10);
+  if(s.pub){s.pub.shock=(s.pub.shock||0)+(ESG_ADJ[g]*0.8);if(g==='A+'&&!s.flags.esgFund){s.flags.esgFund=1;s.pub.shock+=0.04;addLog('ESG 등급 A+로 국내외 ESG 펀드 편입. 기관 매수세 유입.')}}
+  s.brand+=g.startsWith('A')?3:g==='D'?-3:0;gainXP(20);addLog(`지속가능경영보고서 발간 (${won(c)}). ${OUTLET_ESG} 등급 ${g}${old?` (전년 ${old})`:''} — 환경 ${Math.round(B.e)} · 사회 ${Math.round(B.s)} · 지배구조 ${Math.round(B.g)}.`);toast(`ESG 등급 ${g}`,g.startsWith('A')?'good':g==='D'?'bad':'')}
+const auditTarget=()=>!!s.pub||assets()>=1.2e10||lastRev()*12>=1e10||orgSize()>=100;
+function auditTick(note){
+  if(!auditTarget())return;const y=calY(s.month)-1;s.audit=s.audit||{};if(s.audit.y===y)return;s.audit.y=y;
+  const yrRev=s.hist.filter(h=>calY(h.m)===y).reduce((a,h)=>a+h.rev,0);const fee=clamp(yrRev*0.0008,1e7,1e9);s.cash-=fee;
+  const B=esgBase(),rw=runway();const gc=(s.cash<0||(rw<6&&rw!==Infinity))&&(s.yp[y]||0)<0;
+  let risk=0.02+(s.flags.bluff?0.12:0)+(B.g<30?0.07:B.g<45?0.03:0)+(gc?0.1:0)+(s.team.length>20&&!byRole('ops').length?0.05:0)+(s.flags.embezzle?0.35:0)+(s.audit.reaudit?0.04:0);
+  if(s.esg&&s.esg.inv.audit)risk*=0.5;
+  const r=R();const op=r<risk*0.15?'의견거절':r<risk*0.35?'부적정':r<risk?'한정':'적정';
+  s.audit.last={y,op,gc,fee};s.audit.hist=(s.audit.hist||[]).concat([{y,op,gc}]).slice(-10);delete s.flags.embezzle;
+  const txt=`${y}년 외부감사 결과: ${op}${gc&&op==='적정'?' (계속기업 불확실성 강조사항)':''}. 감사보수 ${won(fee)}.`;
+  if(op==='적정'){note(txt,gc?'bad':'');if(s.pub){if(s.pub.auditWarn){s.pub.auditWarn=0;note('감사의견 적정으로 관리종목 사유 해소.','good')}if(s.pub.halt&&s.pub.halt.review)s.pub.halt.cured=true}s.audit.reaudit=false;return}
+  note(txt,'bad');
+  if(s.pub){const P=s.pub;
+    if(op==='한정'){P.auditWarn=(P.auditWarn||0)+1;P.price*=0.82;P.mcap=P.price*P.shares;boardCtx('earnMiss');if(P.auditWarn>=2){startHalt('2년 연속 감사의견 한정',12,true,note)}else note('감사의견 한정으로 관리종목 지정. 주가 급락. 내년에도 한정이면 상장적격성 심사 대상입니다.','bad')}
+    else startHalt(op==='의견거절'?'감사의견 거절':'감사의견 부적정',12,true,note)}
+  else{s.flags.auditBad=s.month;s.trust-=15;note('비적정 감사의견으로 투자자와 은행의 신뢰가 무너졌습니다. 1년간 투자 유치가 크게 어려워집니다.','bad')}
+}
+function startHalt(reason,months,review,note){const P=s.pub;if(!P||P.halt)return;P.halt={reason,left:months,review,at:s.month,cured:false};s.audit=s.audit||{};if(review)s.audit.reaudit=true;
+  (note||(x=>addLog(x)))(`매매거래정지: ${reason}. ${review?`한국거래소 상장적격성 실질심사 대상, 개선기간 ${months}개월.`:`${months}개월 후 재개 예정.`}`,'bad');
+  s.board=s.board||[];s.board.unshift({id:s.nextId++,m:s.month,nick:nick(),title:`거래정지 실화냐... ${reason}`,body:'돈이 묶였습니다. 회사는 아무 설명도 없네요.',views:ri(8000,20000),up:ri(300,900),down:ri(10,50),rep:Array.from({length:10},()=>({n:nick(),t:pick(['상폐각...','제 돈 어떡해요','소송 준비합시다','개선기간 동안 버티면 살 수도','대표 나와라','물린 사람 모여라'])}))})}
+function haltTick(P,note){const H=P.halt;H.left--;
+  if(H.left<=0&&H.review&&!H.cured&&(calM(s.month)!==3||!(s.audit&&s.audit.last&&s.audit.last.y>=calY(H.at)))){H.left=1}
+  if(H.left>0){if(R()<0.4)s.board.unshift(boardPost('vneg','vneg',chatCtx()));return}
+  if(!H.review||H.cured){const sh=H.review?rnd(-0.35,0.05):rnd(-0.25,0.1);P.price*=1+sh;P.mcap=P.price*P.shares;P.halt=null;note(`매매거래 재개 (${H.reason}). 재개 첫날 ${sgn(sh)}${pc(sh,0)}.`,sh>=0?'good':'bad');gainXP(30);s.flags.haltSurvived=1;return}
+  delistNow(`상장적격성 실질심사 결과 상장폐지 (${H.reason})`,note)}
+function delistNow(reason,note){const P=s.pub;if(!P)return;const before=P.price;P.price*=rnd(0.08,0.25);P.mcap=P.price*P.shares;
+  note(`${reason}. 정리매매 7거래일 동안 주가 ${num(before)}원 → ${num(P.price)}원 (${pc(P.price/before-1,0)}).`,'bad');
+  if(!s.infinite){endGame('delist',P.mcap);return}
+  s.delisted={at:s.month,reason,price:P.price};for(const c of s.cap)if(c.t==='pub')c.n='소액주주 (상장폐지 후 장외)';s.pub=null;s.brand-=15;s.trust=Math.max(10,s.trust-25);s.flags.ipoRetry=s.month+60;
+  note('회사는 비상장 상태로 계속 운영됩니다. 5년 후 재상장에 도전할 수 있습니다.','bad');(s.flags.cele=s.flags.cele||[]).push('delist')}
+function auditPanel(){const A=s.audit||{},L=A.last;const T=auditTarget();
+  return `<p class="note">주식회사 등의 외부감사에 관한 법률: 상장사이거나 자산 120억·매출 100억·직원 100명 이상이면 매년 3월 외부감사를 받습니다. 지배구조(G) 점수, 내부통제, 경영지원 인력, 데이터 부풀리기 이력, 계속기업 위험이 감사의견을 좌우합니다. 한정은 관리종목, 부적정·의견거절은 거래정지와 상장적격성 실질심사로 이어집니다.</p>
+   <p>${T?'<span class="chip">외부감사 대상</span>':'<span class="chip">외부감사 비대상</span>'} ${L?`최근 감사의견 <b class="${L.op==='적정'?'good':'bad'}">${L.y}년 ${L.op}</b>${L.gc?' <span class="chip warn">계속기업 불확실성</span>':''}`:''}</p>
+   ${s.pub&&s.pub.halt?`<div class="callout bad">거래정지 중: ${esc(s.pub.halt.reason)} · ${s.pub.halt.left}개월 남음${s.pub.halt.review?(s.pub.halt.cured?' · 재감사 적정, 개선 인정 예정':' · 다음 3월 재감사에서 적정을 받아야 합니다'):''}</div>`:''}
+   ${s.delisted?`<div class="callout bad">${ym(s.delisted.at)} 상장폐지: ${esc(s.delisted.reason)}</div>`:''}`}
+function esgPanel(){const E=s.esg||(s.esg={inv:{},grade:null,reportY:null,pen:0}),B=esgBase(),must=s.pub&&assets()>=2e12;
+  const bar=(l,v)=>meter(l,v,100,v<40?'bad':v<55?'warn':'',Math.round(v));
+  return `<div class="row between"><span>예상 등급 <b>${esgGrade(B.tot)}</b>${E.grade?` · 공식 등급 <b class="${E.grade.startsWith('A')?'good':E.grade==='D'?'bad':''}">${E.grade}</b> (${E.reportY})`:''}</span>${must?'<span class="chip warn">공시 의무 대상</span>':''}</div>
+   ${bar('환경 (E)',B.e)}${bar('사회 (S)',B.s)}${bar('지배구조 (G)',B.g)}
+   <p class="note">${OUTLET_ESG} 등급은 기업가치에 ${ESG_ADJ['D']*100}%~+${ESG_ADJ['A+']*100}% 반영되고, A+면 ESG 펀드에 편입됩니다. 자산 2조 이상 상장사는 매년 6월까지 지속가능경영보고서 공시 의무가 있으며, 어기면 불성실공시 벌점을 받습니다 (현재 벌점 ${E.pen||0}점, 15점 이상이면 거래정지).</p>
+   <button class="btn sm ${must&&E.reportY!==calY(s.month)?'primary':''}" data-esgrep="1" ${E.reportY===calY(s.month)||s.cash<sc(3e7)?'disabled':''}>${calY(s.month)}년 지속가능경영보고서 발간 (${won(sc(3e7))})</button>
+   <div class="grid3">${ESG_INV.map(x=>`<div class="panel" style="padding:10px;gap:4px"><span class="chip">${x.a}</span><b>${x.n}</b>${E.inv[x.k]!=null?'<span class="chip good">완료</span>':`<button class="btn sm" data-esginv="${x.k}" ${s.cash<sc(x.b)?'disabled':''}>${won(sc(x.b))}</button>`}</div>`).join('')}</div>`}
+function esgTick(note){const E=s.esg;if(!E||!s.pub)return;
+  if(calM(s.month)===7&&assets()>=2e12&&E.reportY!==calY(s.month)){E.pen=(E.pen||0)+6;note(`지속가능경영보고서 미공시로 불성실공시법인 지정, 벌점 6점 (누적 ${E.pen}점).`,'bad');s.pub.price*=0.95;s.pub.mcap=s.pub.price*s.pub.shares;
+    if(E.pen>=15&&!s.pub.halt){startHalt('불성실공시 벌점 누적',1,false,note);E.pen=0}}}
+
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
   if(s.ended)return;
@@ -1586,7 +1678,7 @@ function render(){
   app.innerHTML=header()+kpis()+`<div class="main"><div class="panel" style="gap:14px">${tabs()}<div id="tabc">${tabContent()}</div></div><aside class="side">${plan()}</aside></div>`;
 }
 function header(){const I=ind();return `<header class="top"><div class="brand"><small>${esc(I.name)} · ${esc(I.ex)}</small><h1>${esc(s.co)}</h1></div>
-  <div class="row"><span class="chip ${s.climate<0.85?'bad':s.climate>1.1?'good':''}">투자심리 ${Math.round(s.climate*100)}</span><span class="chip">기준금리 ${trim(s.rate,2)}%</span><span class="chip">원/달러 ${num(s.usd)}</span>${s.pub?`<span class="chip ${s.pub.price>=(s.pub.prev||s.pub.price)?'upbg':'downbg'}">${s.pub.market} ${num(s.pub.price)}원 ${s.pub.price>=(s.pub.prev||s.pub.price)?'▲':'▼'}${pc(Math.abs(s.pub.price/(s.pub.prev||s.pub.price)-1),1)}</span>${s.pub.warn?'<span class="chip bad">관리종목</span>':''}`:`<span class="chip acc">${stageIdx()<0?'부트스트래핑':ROUNDS[stageIdx()].name+' 완료'}</span>`}${s.infinite?'<span class="chip">무한 모드</span>':''}<span class="chip">${D().n}</span><span class="chip acc">${SIZES[sizeIdx(s.size||'micro')].n}</span>
+  <div class="row"><span class="chip ${s.climate<0.85?'bad':s.climate>1.1?'good':''}">투자심리 ${Math.round(s.climate*100)}</span><span class="chip">기준금리 ${trim(s.rate,2)}%</span><span class="chip">원/달러 ${num(s.usd)}</span>${s.pub?`${s.pub.halt?'<span class="chip bad">거래정지</span>':''}<span class="chip ${s.pub.price>=(s.pub.prev||s.pub.price)?'upbg':'downbg'}">${s.pub.market} ${num(s.pub.price)}원 ${s.pub.price>=(s.pub.prev||s.pub.price)?'▲':'▼'}${pc(Math.abs(s.pub.price/(s.pub.prev||s.pub.price)-1),1)}</span>${s.pub.warn||s.pub.auditWarn?'<span class="chip bad">관리종목</span>':''}`:`<span class="chip acc">${stageIdx()<0?'부트스트래핑':ROUNDS[stageIdx()].name+' 완료'}</span>`}${s.infinite?'<span class="chip">무한 모드</span>':''}<span class="chip">${D().n}</span><span class="chip acc">${SIZES[sizeIdx(s.size||'micro')].n}</span>
   <div class="date"><b>${calY(s.month)}년 ${calM(s.month)}월</b>업력 ${s.month}개월</div></div></header>${s.log[0]?`<div class="ticker"><b>속보</b><span>${esc(s.log[0].t)}</span></div>`:''}`}
 function kpis(){
   const I=ind(),L=s.last,rw=runway(),g=growth();
@@ -1892,6 +1984,8 @@ function tInv(){
    <div class="grid2"><div class="panel"><h2>주주명부 (Cap Table)</h2><div class="tbl"><table><thead><tr><th>주주</th><th></th><th class="r">지분</th><th class="r">투자금</th></tr></thead><tbody>${capRows}</tbody></table></div>${s.cap.find(c=>c.t==='esop')?`<p class="note">ESOP 미부여 잔여 ${pc(s.esopFree,2)}</p>`:''}</div>
    <div class="panel"><h2>정부지원 · 정책자금</h2>${gov}</div></div>
    <div class="panel"><h2>기업 인증 · 제도</h2><table><tbody>${certRows()}</tbody></table></div>
+   <div class="panel"><h2>외부감사 · 공시</h2>${auditPanel()}</div>
+   <div class="panel"><h2>ESG · 지속가능경영보고서</h2>${esgPanel()}</div>
    ${s.pub?'':`<div class="panel"><h2>상장 (IPO)</h2>${ipoHtml}</div>`}
    ${s.rounds.length?`<div class="panel"><h2>투자 이력</h2><table><thead><tr><th>시점</th><th>라운드</th><th>투자자</th><th class="r">금액</th><th class="r">프리머니</th></tr></thead><tbody>${s.rounds.map(r=>`<tr><td class="mono">${ym(r.m)}</td><td>${r.name}</td><td>${esc(r.vc)}</td><td class="r mono">${won(r.amt)}</td><td class="r mono">${won(r.pre)}</td></tr>`).join('')}</tbody></table></div>`:''}
   </div>`}
@@ -1915,9 +2009,9 @@ function stockPanel0(){
   ${P.warn?'<div class="callout bad">관리종목 지정 상태. 올해 매출 30억을 넘기지 못하면 상장폐지됩니다.</div>':''}
   <div class="grid2">
    <div class="panel" style="padding:12px"><b>대표 지분 매각</b><p class="note">대표 지분 ${pc(me)} · 평가액 ${won(me*P.mcap)}. ${locked?`보호예수 해제까지 ${P.lockup-s.month}개월.`:'블록딜 할인 7%, 양도세 약 25%. 대량 매각은 주가를 누르고 경영권을 약하게 만듭니다.'}</p>
-    <div class="row"><button class="btn sm" data-block="0.01" ${locked||me<0.03?'disabled':''}>1% 매각 (${won(P.mcap*0.01*0.93*0.75)})</button><button class="btn sm" data-block="0.05" ${locked||me<0.08?'disabled':''}>5% 매각 (${won(P.mcap*0.05*0.93*0.75)})</button></div></div>
+    <div class="row">${P.halt?'<div class="callout bad">거래정지 중에는 지분 매각·유상증자가 불가합니다.</div>':''}<button class="btn sm" data-block="0.01" ${locked||me<0.03||P.halt?'disabled':''}>1% 매각 (${won(P.mcap*0.01*0.93*0.75)})</button><button class="btn sm" data-block="0.05" ${locked||me<0.08||P.halt?'disabled':''}>5% 매각 (${won(P.mcap*0.05*0.93*0.75)})</button></div></div>
    <div class="panel" style="padding:12px"><b>자본 정책</b>
-    <div class="row"><button class="btn sm" data-act="rights" ${s.flags.riAt>s.month-6||P.warn?'disabled':''}>유상증자 12% (${won(P.shares*0.12*P.price*0.88)})</button>
+    <div class="row"><button class="btn sm" data-act="rights" ${s.flags.riAt>s.month-6||P.warn||P.halt?'disabled':''}>유상증자 12% (${won(P.shares*0.12*P.price*0.88)})</button>
     <button class="btn sm" data-act="buyback" ${s.cash<3e8?'disabled':''}>자사주 매입 (${won(Math.min(s.cash*0.3,P.mcap*0.03))})</button>
     <button class="btn sm" data-act="dividend" ${canDiv?'':'disabled'}>결산 배당 (${won(Math.max(0,(s.yp[y]||0)*0.2))})</button>
     ${P.market==='KOSDAQ'?`<button class="btn sm ${kospiOk?'primary':''}" data-act="kospi" ${kospiOk?'':'disabled'}>코스피 이전상장</button>`:''}</div>
@@ -2173,6 +2267,8 @@ app.addEventListener('click',e=>{
   if(d.exp){runExp(d.exp);render();return}
   if(d.lc){startLiveCommerce(d.lc);return}
   if(d.adr){startADR(d.adr);render();return}
+  if(d.esgrep){esgReport();render();return}
+  if(d.esginv){esgInvest(d.esginv);render();return}
   if(d.buy!=null){buyPeer(+d.buy);render();return}
   if(d.cult){const had=s.culture&&s.culture!=='none';s.culture=d.cult;s.cultAt=s.month;if(had)s.team.forEach(e=>e.morale-=10);addLog(`기업 문화 ${had?'전환':'정립'}: ${CULTURES[d.cult].n}.`);toast(`기업 문화: ${CULTURES[d.cult].n}`,'good');sanitize();render();return}
   if(d.tev){teamEv(d.tev);render();return}
