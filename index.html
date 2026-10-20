@@ -181,6 +181,18 @@ td.r,th.r{text-align:right}
 .ap{border:1px dashed var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px}
 .ap.on{border-style:solid;border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface))}
 .grade{font-family:var(--f-display);font-size:96px;line-height:1;color:var(--accent)}.grade.up{color:var(--up)}.grade.down{color:var(--down)}
+.tkwrap{overflow:hidden;min-width:0;flex:1;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.tkrun{display:inline-flex;gap:40px;white-space:nowrap}
+.tk em{font-style:normal;color:var(--up);font-weight:700}
+@media (prefers-reduced-motion:no-preference){.tkrun{animation:tk 70s linear infinite}@keyframes tk{to{transform:translateX(-50%)}}.ticker:hover .tkrun{animation-play-state:paused}}
+@media (prefers-reduced-motion:reduce){.tkrun{flex-direction:column;gap:4px;white-space:normal}.tkrun .tk:nth-child(n+4){display:none}}
+.news{display:flex;flex-direction:column;max-height:640px;overflow:auto}
+.nday{font-family:var(--f-mono);font-size:12px;color:var(--muted);padding:10px 0 4px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.nrow{display:flex;gap:6px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13.5px;flex-wrap:wrap}
+.org{display:flex;flex-direction:column;align-items:center;gap:14px}
+.orow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;border-top:2px solid var(--line);padding-top:14px;width:100%}
+.obox{border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:120px;background:var(--bg);font-size:13px}
+.obox.ceo{border-color:var(--accent);background:var(--accent-soft)}
 .board td{font-size:13px}
 .linkish{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}.linkish:hover{text-decoration:underline}.board tr.sel td{background:var(--sunk)}
 .post{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
@@ -340,7 +352,7 @@ function migrate(o){if(!o)return o;
   o.ch=o.ch||{search:(o.ad||0)*0.5,social:(o.ad||0)*0.5,video:0,content:o.brandAd||0,offline:0};o.seo=o.seo||0;o.fx=o.fx||{};
   o.road=o.road||{cur:null,prog:0,share:0.3,done:[]};o.coh=o.coh||[];o.certs=o.certs||{venture:'none',lab:'none',isms:'none'};o.certLeft2=o.certLeft2||{};
   o.rnd=o.rnd||{};o.taxCredit=o.taxCredit||0;o.rate=o.rate??2.75;o.usd=o.usd??1380;o.annual=o.annual||0;o.deferred=o.deferred||0;
-  o.flags=o.flags||{};o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
+  o.flags=o.flags||{};o.timeline=o.timeline||[];o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
   for(const e of o.team||[]){if(!e.trait)e.trait='none';e.mil=e.mil||0;e.leave=e.leave||0}return o}
 function load(){try{const t=localStorage.getItem(KEY);return t?migrate(JSON.parse(t)):null}catch(e){return null}}
 function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
@@ -361,7 +373,7 @@ function newGame(c){
     retire:0,loss:0,yp:{},vat:{out:0,in:0},climate:1,ctrend:0,
     hist:[],log:[],pending:[],last:null,deposit:0,flags:{},pivots:0,erVisits:0,ipo:null,extra:[],ended:null,nextId:1,cofVest:0};
   if(c.ind==='mfg')s.mfg={lines:0,building:[],site:'none',workers:0,wage:3.7e7,wMorale:65,inv:0,recv:[0,0],plan:1,oem:true,mat:1,cert:{iatf:'none',ce:'none'},certLeft:{},yield:0.8,smart:false,fill:1,siteVal:0};
-  migrate(s);if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
+  s.timeline=[];migrate(s);if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
   if(cy)addLog(`${cy.gen+1}번째 창업. 이전 엑싯 자금 중 ${won(b.cap)}를 새 회사에 투자합니다.`);
   if(c.cof!=='none'){const C=COF[c.cof];
     s.team.push({id:s.nextId++,name:pickName(),role:C.role,lv:3,skill:C.skill,salary:C.salary||0,morale:80,ten:0,ramp:1,opt:0,cof:true});
@@ -374,7 +386,7 @@ function newGame(c){
   save();
 }
 function pickName(){return pick(SUR)+pick(GIV)}
-function addLog(t,m){s.log.unshift({m:m??s.month,t})}
+function addLog(t,m){s.log.unshift({m:m??s.month,t});timelineHook(t)}
 
 /* ============ 계산 헬퍼 ============ */
 const headcount=()=>s.team.length;
@@ -703,6 +715,7 @@ function simulate(){
   if(s.cash<0)s.pending.push(EV_CRISIS());
   if(!s.infinite&&s.month>=120&&!s.ended)s.pending.push(EV_TIMEOUT());
   genCands();
+  genDaily(m,notes,rec);
   return {rec,notes};
 }
 function removeEmp(e,why){
@@ -1733,6 +1746,103 @@ function marketDetail(P,note){const H=s.hist.slice(-12).map(h=>h.price).filter(B
   P.foreign=clamp((P.foreign??rnd(3,12))+chg*20+(s.esg&&s.esg.grade&&s.esg.grade.startsWith('A')?0.3:0)+(P.adr&&P.adr.on?0.4:0)+rnd(-0.8,0.8),0.5,55);
   P.short=clamp((P.short??rnd(0.5,3))-chg*15+(P.price<P.ipoPrice?0.3:-0.2)+rnd(-0.4,0.4),0.1,25)}
 
+/* ============ 일일 뉴스 · 일봉 · 회사 정보 ============ */
+const NEWS_CAT={brk:'속보',eco:'경제',mkt:'증시',ind:'업계',riv:'경쟁사',stp:'스타트업',our:'우리 회사'};
+const IND_NEWS={
+  saas:['중기부, 中企 디지털 전환 바우처 예산 {n}% 증액','클라우드 3사 국내 리전 요금 인상 검토','HR테크 시장 규모 연 {n}% 성장 전망','"주 4.5일제" 시범 도입 기업 늘어… 근태관리 수요↑','글로벌 SaaS 기업들 한국 지사 설립 잇따라','AI 노무상담 서비스 법적 책임 논란'],
+  app:['앱마켓 수수료 인하 법안 국회 상임위 통과','MZ세대 구독 서비스 평균 {n}개 이용','AI 튜터 앱 다운로드 전년比 {n}% 증가','애플·구글 인앱결제 정책 변경 예고','청소년 앱 이용시간 규제 논의 재점화','에듀테크 투자 위축… 옥석 가리기'],
+  commerce:['온라인 식품 거래액 역대 최대','택배비 인상 예고… 이커머스 수익성 비상','저당·저칼로리 식품 시장 {n}% 성장','대형 플랫폼 PB 확대에 D2C 브랜드 긴장','라이브커머스 시장 거래액 {n}조 돌파 전망','식약처, 건강기능 표시광고 단속 강화'],
+  market:['플랫폼 노동자 보호법 공청회 개최','가사서비스 이용 가구 {n}% 증가','공정위, 중개 플랫폼 수수료 실태조사 착수','맞벌이 가구 증가로 돌봄 플랫폼 수요 급증','외국인 가사도우미 시범사업 확대','플랫폼 리뷰 조작 처벌 강화'],
+  mfg:['전기차 판매 전년比 {n}% 증가','LME 알루미늄 가격 {up}','완성차 업계, 부품 국산화 비율 확대 추진','배터리 3사 북미 공장 증설 발표','중대재해처벌법 50인 미만 사업장 감독 강화','산업용 전기요금 {n}% 인상 확정'],
+};
+const STP_NEWS=['{peer}, {amt} 규모 시리즈 {r} 투자 유치','{peer}, 직원 {n}% 구조조정 단행','{peer} 대표 "올해 흑자 전환 자신"','모태펀드 출자 예산 {n}% 증액','VC 신규 투자 전년比 {up}','{peer}, 해외 진출 위해 일본 법인 설립','스타트업 3년 생존율 {n}%… OECD 하위권','{peer}, 코스닥 상장 예비심사 청구','{peer}·{peer2} 합병 추진설'];
+const RIV_NEWS=['{rv}, 신규 기능 출시하며 공격적 마케팅','{rv}, 대기업 출신 CTO 영입','{rv} 대표 "1위 자리 내주지 않겠다"','{rv}, 가격 인하 프로모션 시작','{rv}, 개인정보 처리방침 위반으로 과태료','{rv}, 채용 규모 두 배로 확대'];
+function daysOf(y,mo){const out=[];const n=new Date(y,mo,0).getDate();for(let d=1;d<=n;d++){const w=new Date(y,mo-1,d).getDay();if(w!==0&&w!==6)out.push(d)}return out}
+function fillN(t){const p=s.peers&&s.peers.length?pick(s.peers).n:'모아러닝';let p2=s.peers&&s.peers.length?pick(s.peers).n:'달빛페이';if(p2===p)p2='새벽바이오';
+  return t.replace('{n}',ri(3,40)).replace('{up}',pick(['급등','급락','상승','하락','보합'])).replace('{amt}',won(rnd(5e9,6e10))).replace('{r}',pick(['A','B','C'])).replace('{peer}',p).replace('{peer2}',p2).replace('{rv}',s.rival.name)}
+function genDaily(m,notes,rec){
+  const y=calY(m),mo=calM(m),days=daysOf(y,mo);const N=[];const add=(d,c,h,brk)=>N.push({d,c,h,brk:!!brk});
+  add(days[0],'eco',`${mo}월 수출 ${pick(['증가','감소'])} 전환… 반도체·자동차 ${pick(['호조','부진'])}`);
+  add(pick(days),'eco',`원/달러 환율 ${num(s.usd)}원 마감, 기준금리 연 ${trim(s.rate,2)}%`);
+  add(pick(days),'eco',pick(['소비자심리지수 3개월 연속 '+pick(['상승','하락']),'고용 지표 '+pick(['호조','둔화'])+'… 청년 실업률 '+trim(rnd(5,9),1)+'%','물가상승률 '+trim(rnd(1.5,4),1)+'% 기록','부동산 PF 부실 우려 '+pick(['확산','진정'])]));
+  const kq=Math.round(700+s.climate*250+rnd(-30,30));for(const d of [days[4],days[11],days[days.length-1]].filter(Boolean))add(d,'mkt',`코스닥 ${num(kq+ri(-25,25))} 마감, ${pick(['외국인','기관','개인'])} ${pick(['순매수','순매도'])} ${num(ri(500,6000))}억`);
+  for(let i=0;i<3;i++)add(pick(days),'ind',fillN(pick(IND_NEWS[s.ind])));
+  for(let i=0;i<3;i++)add(pick(days),'stp',fillN(pick(STP_NEWS)));
+  add(pick(days),'riv',fillN(pick(RIV_NEWS)));
+  for(const n of notes){if(/^업적|대표 개인|이사회 목표:|부가가치세|\[AI\]/.test(n.t))continue;const big=n.c==='good'||n.c==='bad';add(pick(days),'our',n.t.split(/[.!](\s|$)/)[0],big&&/상장|투자|인수|거래정지|상장폐지|어닝|쇼크|서프라이즈|출시|횡령|파업|노동조합|매각|선정/.test(n.t))}
+  if(s.pub&&rec){const P=s.pub,a=P.prev||P.price,b=P.price;const path=P.halt?days.map(()=>b):pathTo(a,b,days.length,0.018);P.daily=(P.daily||[]).concat(days.map((d,i)=>({y,mo,d,p:path[i]}))).slice(-80);
+    const ret=path.map((p,i)=>p/(i?path[i-1]:a)-1);let mx=0,mi=0;ret.forEach((r,i)=>{if(r>ret[mx])mx=i;if(r<ret[mi])mi=i});
+    if(ret[mx]>0.04)add(days[mx],'mkt',`${s.co} ${pc(ret[mx],1)} 급등… ${pick(['기관 매수세','외국인 순매수','테마 수급','호재성 공시'])}`,ret[mx]>0.15);
+    if(ret[mi]<-0.04)add(days[mi],'mkt',`${s.co} ${pc(-ret[mi],1)} 급락… ${pick(['차익실현 매물','외국인 매도','업황 우려','오버행 부담'])}`,ret[mi]<-0.15)}
+  N.sort((a,b)=>a.d-b.d);s.daily=(s.daily||[]).filter(x=>x.m>m-3).concat(N.map(x=>({...x,m})));
+}
+function tNews(){const D=(s.daily||[]).slice().reverse();const f=ui.newsCat||'all';const L=D.filter(x=>f==='all'||x.c===f);
+  let html='',cur='';for(const x of L.slice(0,120)){const k=`${calY(x.m)}.${String(calM(x.m)).padStart(2,'0')}.${String(x.d).padStart(2,'0')}`;if(k!==cur){cur=k;const w='일월화수목금토'[new Date(calY(x.m),calM(x.m)-1,x.d).getDay()];html+=`<div class="nday">${k} (${w})</div>`}
+    html+=`<div class="nrow">${x.brk?'<span class="chip bad">속보</span>':''}<span class="chip ${x.c==='our'?'acc':''}">${NEWS_CAT[x.c]}</span><span>${esc(x.h)}</span></div>`}
+  return `<div class="panel"><div class="row between"><h2>오늘의 뉴스</h2><span class="note">최근 3개월 · 영업일 기준</span></div>
+   <div class="row">${[['all','전체'],...Object.entries(NEWS_CAT).filter(([k])=>k!=='brk')].map(([k,n])=>`<button class="btn sm" data-ncat="${k}" aria-pressed="${f===k}" style="${f===k?'border-color:var(--accent);color:var(--accent)':''}">${n}</button>`).join('')}</div>
+   <div class="news">${html||'<p class="muted">다음 달부터 뉴스가 쌓입니다.</p>'}</div></div>`}
+function tickerHTML(){const D=(s.daily||[]).filter(x=>x.m===s.month-1);const items=D.slice().sort((a,b)=>(b.brk-a.brk)||((b.c==='our')-(a.c==='our'))).slice(0,14);
+  if(!items.length)return s.log[0]?`<div class="ticker"><b>속보</b><span>${esc(s.log[0].t)}</span></div>`:'';
+  const line=items.map(x=>`<span class="tk">${x.brk?'<em>[속보]</em> ':''}[${NEWS_CAT[x.c]}] ${esc(x.h)}</span>`).join('');
+  return `<div class="ticker"><b>뉴스</b><div class="tkwrap"><div class="tkrun">${line}${line}</div></div></div>`}
+function dailyChart(){const D=(s.pub&&s.pub.daily)||[];if(D.length<5)return '';const W=600,H=140,ps=D.map(x=>x.p),mn=Math.min(...ps),mx=Math.max(...ps),rg=mx-mn||1;
+  const bw=W/D.length;const bars=D.map((x,i)=>{const prev=i?D[i-1].p:x.p,up=x.p>=prev,y1=H-12-(Math.max(x.p,prev)-mn)/rg*(H-24),y2=H-12-(Math.min(x.p,prev)-mn)/rg*(H-24);return `<rect x="${(i*bw+bw*0.15).toFixed(1)}" y="${y1.toFixed(1)}" width="${(bw*0.7).toFixed(1)}" height="${Math.max(1,y2-y1).toFixed(1)}" style="fill:var(${up?'--up':'--down'})"/>`}).join('');
+  return `<div class="chart"><div class="row between note"><span>일봉 (최근 ${D.length}거래일)</span><span class="mono">${D[0].mo}.${D[0].d} ~ ${D[D.length-1].mo}.${D[D.length-1].d} · 고가 ${num(mx)} · 저가 ${num(mn)}</span></div><svg viewBox="0 0 ${W} ${H}" role="img">${bars}</svg></div>`}
+
+/* ---- 회사 정보 ---- */
+const ADDR={home:'서울특별시 관악구 (대표 자택)',center:'서울특별시 강남구 역삼로 창업지원센터 4층',cowork:'서울특별시 강남구 테헤란로 공유오피스 12층',pangyo:'경기도 성남시 분당구 판교역로 235',gangnam:'서울특별시 강남구 테헤란로 427',hq:'경기도 성남시 수정구 창업로 (제2판교 사옥)'};
+const DEPT={dev:'개발본부',design:'디자인팀',pm:'프로덕트팀',sales:'영업본부',mkt:'마케팅팀',cs:'고객경험팀',data:'데이터팀',ops:'경영지원본부',qa:'품질관리팀'};
+const CXO={dev:'CTO',sales:'CSO',mkt:'CMO',ops:'CFO',pm:'CPO',data:'CDO',qa:'공장장'};
+function ensureCorp(){s.corp=s.corp||{biz:`${ri(100,899)}-${ri(10,99)}-${ri(10000,99999)}`,code:String(ri(100000,499999)).padStart(6,'0'),day:ri(2,26),face:500}}
+function timelineHook(t){if(!s||!s.timeline)return;if(/법인 설립|정식 출시|클로징|코스닥 상장!|상장! 티커|인수 완료|기업 규모 승격|상장폐지|이전상장|피벗|TIPS 선정|초기창업패키지 선정|업적 달성: (첫 고객|월매출|유니콘|데카콘|TOP 10|그룹)|생산라인 #|진출\./.test(t)){s.timeline.unshift({m:s.month,t:t.split(/(?<=[.!])\s/)[0]});if(s.timeline.length>80)s.timeline.length=80}}
+function finStatements(){const ys=[...new Set(s.hist.map(h=>calY(h.m)))].slice(-3);
+  const IS=ys.map(y=>{const H=s.hist.filter(h=>calY(h.m)===y);const rev=H.reduce((a,h)=>a+h.rev,0),op=H.reduce((a,h)=>a+(h.op||0),0);const tax=op>0?op*0.15:0;return {y,rev,op,ni:op-tax,margin:rev>0?op/rev:0,months:H.length}});
+  const recv=s.mfg?s.mfg.recv.reduce((a,b)=>a+b,0):0,inv=s.mfg?s.mfg.inv*ind().base*ind().mat:0,ppe=s.mfg?s.mfg.siteVal+s.mfg.lines*LINE.capex*0.7:0,subs=(s.subs||[]).reduce((a,c)=>a+c.book,0);
+  const A={cash:Math.max(0,s.cash),recv,inv,ppe,dep:s.deposit,subs};const Atot=Object.values(A).reduce((a,b)=>a+b,0);
+  const L={loan:loanBal(),ret:s.retire,def:s.deferred||0,neg:s.cash<0?-s.cash:0};const Ltot=Object.values(L).reduce((a,b)=>a+b,0);
+  return {IS,A,Atot,L,Ltot,E:Atot-Ltot}}
+function tCorp(){ensureCorp();const C=s.corp,I=ind(),P=s.pub,F=finStatements();
+  const sal=s.team.length?s.team.reduce((a,e)=>a+e.salary,0)/s.team.length:0,ten=s.team.length?s.team.reduce((a,e)=>a+e.ten,0)/s.team.length:0;
+  const shares=P?P.shares:Math.round(s.capital/C.face);
+  const row=(k,v)=>`<tr><td class="note" style="width:34%">${k}</td><td>${v}</td></tr>`;
+  const leads={};for(const e of s.team){if(e.leave)continue;if(!leads[e.role]||e.lv>leads[e.role].lv||(e.lv===leads[e.role].lv&&e.skill>leads[e.role].skill))leads[e.role]=e}
+  const cof=s.team.find(e=>e.cof);
+  const depts=Object.keys(DEPT).map(r=>({r,n:byRole(r).length})).filter(x=>x.n>0);
+  const org=`<div class="org"><div class="obox ceo"><b>대표이사 CEO</b><span>${esc(s.fname)}</span></div>
+    <div class="orow">${depts.map(x=>{const L=leads[x.r];const big=x.n>=3;const title=L&&(L.lv>=3||L.cof)&&CXO[x.r]?CXO[x.r]:'팀장';return `<div class="obox"><b>${DEPT[x.r]}</b><span>${L?`${esc(L.name)} ${big||L.cof?title:''}`:'-'}</span><span class="note mono">${x.n}명${big?` · 평균 사기 ${Math.round(byRole(x.r).reduce((a,e)=>a+clamp(e.morale,0,100),0)/x.n)}`:''}</span></div>`}).join('')}
+    ${s.mfg&&s.mfg.workers?`<div class="obox"><b>생산본부</b><span>생산직</span><span class="note mono">${num(s.mfg.workers)}명</span></div>`:''}${!depts.length&&!(s.mfg&&s.mfg.workers)?'<span class="note">아직 대표 혼자입니다.</span>':''}</div></div>`;
+  const top=s.cap.filter(c=>c.pct>0.001).sort((a,b)=>b.pct-a.pct).slice(0,6);
+  return `<div style="display:flex;flex-direction:column;gap:14px">
+  <div class="grid2"><div class="panel"><h2>기업 개요</h2><div class="tbl"><table><tbody>
+    ${row('회사명',`<b>${esc(s.co)}</b>`)}${row('대표이사',esc(s.fname)+(cof?` · 공동창업자 ${esc(cof.name)}`:''))}${row('설립일',`2027년 1월 ${C.day}일`)}${row('사업자등록번호',`<span class="mono">${C.biz}</span>`)}
+    ${row('업종',`${I.name} · ${esc(I.ex)}`)}${row('본사',ADDR[s.office]||'')}${s.mfg&&s.mfg.site!=='none'?row('공장',SITES[s.mfg.site].name):''}
+    ${row('기업 규모',SIZES[sizeIdx(s.size||'micro')].n+(s.certs.venture==='done'?' · 벤처기업':'')+(s.certs.lab==='done'?' · 기업부설연구소':''))}
+    ${row('상장 여부',P?`${P.market} 상장 · 종목코드 <span class="mono">${C.code}</span>${P.adr&&P.adr.on?` · ${P.adr.ex}: ${tickerOf()}`:''}`:s.delisted?'상장폐지 (비상장)':'비상장')}
+    ${row('결산월','12월')}${row('발행주식 수',`${num(shares)}주 (액면가 ${C.face}원)`)}${row('외부감사',auditTarget()?`대상${s.audit&&s.audit.last?` · 최근 의견 ${s.audit.last.op}`:''}`:'비대상')}
+    ${row('ESG 등급',s.esg&&s.esg.grade?s.esg.grade:'미평가')}${row('기업 문화',CU().n)}
+  </tbody></table></div></div>
+  <div class="panel"><h2>임직원 현황</h2><div class="grid3">
+    <div><div class="note">임직원 수</div><div class="mono lv-mid">${num(orgSize())}명</div></div>
+    <div><div class="note">평균 연봉</div><div class="mono lv-mid">${won(sal)}</div></div>
+    <div><div class="note">평균 근속</div><div class="mono lv-mid">${trim(ten/12,1)}년</div></div>
+    <div><div class="note">4대보험 가입자</div><div class="mono lv-mid">${num(orgSize())}명</div></div>
+    <div><div class="note">노동조합</div><div class="mono lv-mid">${s.union?`있음 (${num(s.union.mem)}명)`:'없음'}</div></div>
+    <div><div class="note">익명 리뷰 평점</div><div class="mono lv-mid">${(s.reviews||[]).length?'★ '+trim(s.reviews.reduce((a,r)=>a+r.st,0)/s.reviews.length,1):'–'}</div></div></div>
+    <h3>주요 주주</h3><div class="tbl"><table><tbody>${top.map(c=>`<tr><td>${esc(c.n)}</td><td class="r mono">${pc(c.pct,2)}</td></tr>`).join('')}</tbody></table></div></div></div>
+  <div class="panel"><h2>조직도</h2>${org}</div>
+  <div class="grid2"><div class="panel"><h2>손익계산서 (연간 요약)</h2><div class="tbl"><table><thead><tr><th></th>${F.IS.map(x=>`<th class="r">${x.y}${x.months<12?`<span class="note"> (${x.months}개월)</span>`:''}</th>`).join('')}</tr></thead><tbody>
+    <tr><td>매출액</td>${F.IS.map(x=>`<td class="r mono">${won(x.rev)}</td>`).join('')}</tr><tr><td>영업이익</td>${F.IS.map(x=>`<td class="r mono ${x.op<0?'bad':''}">${won(x.op)}</td>`).join('')}</tr>
+    <tr><td>영업이익률</td>${F.IS.map(x=>`<td class="r mono">${pc(x.margin,1)}</td>`).join('')}</tr><tr><td>당기순이익 (추정)</td>${F.IS.map(x=>`<td class="r mono ${x.ni<0?'bad':''}">${won(x.ni)}</td>`).join('')}</tr></tbody></table></div></div>
+   <div class="panel"><h2>재무상태표 (현재)</h2><div class="tbl"><table class="pl"><tbody>
+    <tr class="sub"><td>자산총계</td><td class="r mono">${won(F.Atot)}</td></tr>
+    <tr><td>  현금성자산</td><td class="r mono">${won(F.A.cash)}</td></tr>${F.A.recv?`<tr><td>  매출채권</td><td class="r mono">${won(F.A.recv)}</td></tr>`:''}${F.A.inv?`<tr><td>  재고자산</td><td class="r mono">${won(F.A.inv)}</td></tr>`:''}${F.A.ppe?`<tr><td>  유형자산</td><td class="r mono">${won(F.A.ppe)}</td></tr>`:''}${F.A.dep?`<tr><td>  임차보증금</td><td class="r mono">${won(F.A.dep)}</td></tr>`:''}${F.A.subs?`<tr><td>  종속기업투자</td><td class="r mono">${won(F.A.subs)}</td></tr>`:''}
+    <tr class="sub"><td>부채총계</td><td class="r mono">${won(F.Ltot)}</td></tr>${F.L.loan?`<tr><td>  차입금</td><td class="r mono">${won(F.L.loan)}</td></tr>`:''}<tr><td>  퇴직급여충당부채</td><td class="r mono">${won(F.L.ret)}</td></tr>${F.L.def>1?`<tr><td>  선수수익</td><td class="r mono">${won(F.L.def)}</td></tr>`:''}${F.L.neg?`<tr><td>  미지급금 (자금 부족)</td><td class="r mono">${won(F.L.neg)}</td></tr>`:''}
+    <tr class="sum"><td>자본총계</td><td class="r mono ${F.E<0?'bad':''}">${won(F.E)}${F.E<0?' (자본잠식)':''}</td></tr>
+    <tr><td>부채비율</td><td class="r mono">${F.E>0?pc(F.Ltot/F.E,0):'–'}</td></tr></tbody></table></div></div></div>
+  <div class="panel"><h2>회사 연혁</h2><div class="log">${(s.timeline||[]).map(x=>`<div><span>${ym(x.m)}</span><span>${esc(x.t)}</span></div>`).join('')||'<p class="muted">주요 사건이 생기면 기록됩니다.</p>'}</div></div>
+  </div>`}
+
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
   if(s.ended)return;
@@ -1761,7 +1871,7 @@ function render(){
 }
 function header(){const I=ind();return `<header class="top"><div class="brand"><small>${esc(I.name)} · ${esc(I.ex)}</small><h1>${esc(s.co)}</h1></div>
   <div class="row"><span class="chip ${s.climate<0.85?'bad':s.climate>1.1?'good':''}">투자심리 ${Math.round(s.climate*100)}</span><span class="chip">기준금리 ${trim(s.rate,2)}%</span><span class="chip">원/달러 ${num(s.usd)}</span>${s.pub?`${s.pub.halt?'<span class="chip bad">거래정지</span>':''}<span class="chip ${s.pub.price>=(s.pub.prev||s.pub.price)?'upbg':'downbg'}">${s.pub.market} ${num(s.pub.price)}원 ${s.pub.price>=(s.pub.prev||s.pub.price)?'▲':'▼'}${pc(Math.abs(s.pub.price/(s.pub.prev||s.pub.price)-1),1)}</span>${s.pub.warn||s.pub.auditWarn?'<span class="chip bad">관리종목</span>':''}`:`<span class="chip acc">${stageIdx()<0?'부트스트래핑':ROUNDS[stageIdx()].name+' 완료'}</span>`}${s.infinite?'<span class="chip">무한 모드</span>':''}<span class="chip">${D().n}</span>${s.union?'<span class="chip warn">노조</span>':''}<span class="chip acc">${SIZES[sizeIdx(s.size||'micro')].n}</span>
-  <div class="date"><b>${calY(s.month)}년 ${calM(s.month)}월</b>업력 ${s.month}개월</div></div></header>${s.log[0]?`<div class="ticker"><b>속보</b><span>${esc(s.log[0].t)}</span></div>`:''}`}
+  <div class="date"><b>${calY(s.month)}년 ${calM(s.month)}월</b>업력 ${s.month}개월</div></div></header>${tickerHTML()}`}
 function kpis(){
   const I=ind(),L=s.last,rw=runway(),g=growth();
   const k=(l,v,sub,cls='')=>`<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub||'&nbsp;'}</div></div>`;
@@ -1778,9 +1888,9 @@ function kpis(){
    ${s.pub?k('시가총액',won(s.pub.mcap),`주가 ${num(s.pub.price)}원 · 공모가 대비 <span class="${s.pub.price>=s.pub.ipoPrice?'good':'bad'}">${sgn(s.pub.price/s.pub.ipoPrice-1)}${pc(s.pub.price/s.pub.ipoPrice-1,0)}</span>`):k('추정 기업가치',won(fairVal()),`대표 지분 ${pc(myPct())}`)}
    ${k('대표 순자산',won(netWorth()),`개인 자산 ${won(s.wealth)} · 지분 ${pc(myPct())}`)}
   </section>`}
-function tabs(){const T=[['dash','현황'],['prod','제품·마케팅'],...(s.mfg?[['mfg','생산']]:[]),['team','팀'],['fin','재무'],['inv',s.pub?'주식·투자':'투자·지원'],['grow','성장·업적'],...(s.pub?[['board','종목토론방']]:[]),['log','기록']];
+function tabs(){const T=[['dash','현황'],['prod','제품·마케팅'],...(s.mfg?[['mfg','생산']]:[]),['team','팀'],['fin','재무'],['inv',s.pub?'주식·투자':'투자·지원'],['grow','성장·업적'],['news','뉴스'],['corp','회사'],...(s.pub?[['board','종목토론방']]:[]),['log','기록']];
   return `<div class="tabs" role="tablist">${T.map(([k,n])=>`<button class="tab" role="tab" aria-selected="${ui.tab===k}" data-tab="${k}">${n}${k==='team'&&s.cands.length?` <span class="chip">${s.cands.length}</span>`:''}${k==='inv'&&s.fund&&s.fund.offers?' <span class="chip good">텀시트</span>':''}</button>`).join('')}</div>`}
-function tabContent(){return (({dash:tDash,prod:tProd,mfg:tMfg,team:tTeam,fin:tFin,inv:tInv,grow:tGrow,board:tBoard,log:tLog})[ui.tab]||tDash)()}
+function tabContent(){return (({dash:tDash,prod:tProd,mfg:tMfg,team:tTeam,fin:tFin,inv:tInv,grow:tGrow,news:tNews,corp:tCorp,board:tBoard,log:tLog})[ui.tab]||tDash)()}
 
 function meter(label,v,max=100,cls='',right){return `<div class="meter"><div class="row between"><span>${label}</span><span class="mono">${right??Math.round(v)}</span></div><div class="bar ${cls}"><i style="width:${clamp(v/max*100,0,100)}%"></i></div></div>`}
 function chart(series,{h=210,fmt=won,from=null}={}){
@@ -2088,7 +2198,8 @@ function stockPanel0(){
     <div><div class="note">외국인 지분율 · 공매도 잔고</div><div class="mono" style="font-size:18px">${trim(P.foreign||0,1)}% · ${trim(P.short||0,1)}%</div><div class="note">공매도 잔고가 높을수록 숏 스퀴즈 가능성↑</div></div>
     <div><div class="note">PER (최근 12개월)</div><div class="mono" style="font-size:22px">${per?trim(per,1)+'배':'적자'}</div><div class="note mono">다음 분기 컨센서스 ${P.cons?won(P.cons):'–'}</div></div>
   </div>
-  ${chart([{n:'주가',c:'var(--up)',get:h=>h.price||null,area:true}],{fmt:v=>num(v)+'원',from:P.at})}
+  ${chart([{n:'주가 (월말)',c:'var(--up)',get:h=>h.price||null,area:true}],{fmt:v=>num(v)+'원',from:P.at})}
+  ${dailyChart()}
   ${P.warn?'<div class="callout bad">관리종목 지정 상태. 올해 매출 30억을 넘기지 못하면 상장폐지됩니다.</div>':''}
   <div class="grid2">
    <div class="panel" style="padding:12px"><b>대표 지분 매각</b><p class="note">대표 지분 ${pc(me)} · 평가액 ${won(me*P.mcap)}. ${locked?`보호예수 해제까지 ${P.lockup-s.month}개월.`:'블록딜 할인 7%, 양도세 약 25%. 대량 매각은 주가를 누르고 경영권을 약하게 만듭니다.'}</p>
@@ -2349,6 +2460,7 @@ app.addEventListener('click',e=>{
   if(d.life){lifeAct(d.life);render();return}
   if(d.exp){runExp(d.exp);render();return}
   if(d.lc){startLiveCommerce(d.lc);return}
+  if(d.ncat){ui.newsCat=d.ncat;render();return}
   if(d.mail){inboxAnswer(+d.mail,+d.mi);render();return}
   if(d.adr){startADR(d.adr);render();return}
   if(d.esgrep){esgReport();render();return}
