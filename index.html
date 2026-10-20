@@ -193,6 +193,34 @@ td.r,th.r{text-align:right}
 .orow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;border-top:2px solid var(--line);padding-top:14px;width:100%}
 .obox{border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:120px;background:var(--bg);font-size:13px}
 .obox.ceo{border-color:var(--accent);background:var(--accent-soft)}
+.banner{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:12px}
+@media (max-width:860px){.banner{grid-template-columns:minmax(0,1fr)}}
+.banner>div{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.bchap{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))!important}
+.btitle{font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.1}
+.vs{display:grid;grid-template-columns:auto minmax(60px,1fr) auto;gap:8px;align-items:center;font-size:13px}
+.vsbar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--bad) 55%,var(--sunk));overflow:hidden}
+.vsbar i{display:block;height:100%;background:var(--accent)}
+.quote{font-size:12.5px;color:var(--muted);font-style:italic}
+.bdanger{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 10%,var(--surface))!important;justify-content:center}
+.bdanger b{font-size:20px;color:var(--bad)}
+.hand{display:flex;flex-direction:column;gap:8px}
+.decide{border-color:var(--accent)}
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.btn.big{padding:12px 18px;font-size:15px;flex:1}
+.card{display:flex;flex-direction:column;gap:4px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;transition:transform .12s,border-color .12s}
+.card:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;background:color-mix(in srgb,var(--accent-soft) 55%,var(--surface))}
+.card b{font-size:15px}.cfx{font-size:12.5px}
+.card:disabled{opacity:.45}
+.ctag{align-self:flex-start;font-size:11px;font-weight:700;padding:1px 7px;border-radius:3px;background:var(--sunk)}
+.t-성장{background:color-mix(in srgb,var(--accent) 20%,transparent)}.t-도박{background:color-mix(in srgb,var(--warn) 25%,transparent)}.t-자금{background:color-mix(in srgb,var(--info) 22%,transparent)}.t-팀,.t-대표{background:color-mix(in srgb,var(--up) 15%,transparent)}
+.bigres{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.bigres>div{border:1px solid var(--line);border-radius:var(--r);padding:10px;background:var(--bg)}
+.bigres .v{font-family:var(--f-mono);font-size:24px;font-weight:600}
+.why{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.why span.p{color:var(--good)}.why span.m{color:var(--bad)}
+.cardres{border-left:4px solid var(--accent);padding:8px 12px;background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface));border-radius:0 var(--r) var(--r) 0}
 .board td{font-size:13px}
 .linkish{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}.linkish:hover{text-decoration:underline}.board tr.sel td{background:var(--sunk)}
 .post{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
@@ -344,7 +372,7 @@ const ACTS=[
 ];
 
 /* ============ 상태 ============ */
-let s=null, ui={tab:'dash', confirm:null, setup:{ind:'saas',bg:'dev',cof:'none',vest:true,inf:true,diff:'real',name:'',co:''}};
+let s=null, ui={tab:'dash', confirm:null, setup:{mode:'simple',ind:'saas',bg:'dev',cof:'none',vest:true,inf:true,diff:'real',name:'',co:''}};
 const ind=()=>IND[s.ind];
 const KEY='startup-sim-save-v2';
 function save(){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
@@ -352,7 +380,7 @@ function migrate(o){if(!o)return o;
   o.ch=o.ch||{search:(o.ad||0)*0.5,social:(o.ad||0)*0.5,video:0,content:o.brandAd||0,offline:0};o.seo=o.seo||0;o.fx=o.fx||{};
   o.road=o.road||{cur:null,prog:0,share:0.3,done:[]};o.coh=o.coh||[];o.certs=o.certs||{venture:'none',lab:'none',isms:'none'};o.certLeft2=o.certLeft2||{};
   o.rnd=o.rnd||{};o.taxCredit=o.taxCredit||0;o.rate=o.rate??2.75;o.usd=o.usd??1380;o.annual=o.annual||0;o.deferred=o.deferred||0;
-  o.flags=o.flags||{};o.timeline=o.timeline||[];o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
+  o.flags=o.flags||{};o.mode=o.mode||'expert';if(o.rival&&!o.rival.ceo)o.rival.ceo=pick(SUR)+pick(GIV);o.chap=o.chap||{i:0,start:o.month||0,fails:0};o.timeline=o.timeline||[];o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
   for(const e of o.team||[]){if(!e.trait)e.trait='none';e.mil=e.mil||0;e.leave=e.leave||0}return o}
 function load(){try{const t=localStorage.getItem(KEY);return t?migrate(JSON.parse(t)):null}catch(e){return null}}
 function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
@@ -361,7 +389,7 @@ function newGame(c){
   const b={...BG[c.bg]}, I=IND[c.ind], cy=c.carry;
   b.cap*=DIFF[c.diff||'real'].cap;
   if(cy){b.cap=cy.cap;b.network=Math.min(99,b.network+cy.gen*8);b.sales=Math.min(95,b.sales+cy.gen*4);b.dev=Math.min(95,b.dev+cy.gen*3)}
-  s={ind:c.ind,diff:c.diff||'real',infinite:c.inf!==false,gen:cy?cy.gen:0,wealth:cy?cy.keep:0,bg:c.bg,co:c.co||'주식회사 새싹랩',fname:c.name||'대표',vest:c.vest,
+  s={ind:c.ind,mode:c.mode||'simple',diff:c.diff||'real',infinite:c.inf!==false,gen:cy?cy.gen:0,wealth:cy?cy.keep:0,bg:c.bg,co:c.co||'주식회사 새싹랩',fname:c.name||'대표',vest:c.vest,
     month:0,cash:b.cap-6e5,capital:b.cap,
     F:{dev:b.dev,sales:b.sales,network:b.network,energy:b.energy,salary:0,er:0,youth:!!b.youth},
     quality:4,debt:4,pmf:4,fit:clamp(rnd(DIFF[c.diff||'real'].fit,0.95)+(c.bg==='serial'?0.05:0),0.3,1),users:0,supply:0,brand:2,comp:0,
@@ -373,7 +401,7 @@ function newGame(c){
     retire:0,loss:0,yp:{},vat:{out:0,in:0},climate:1,ctrend:0,
     hist:[],log:[],pending:[],last:null,deposit:0,flags:{},pivots:0,erVisits:0,ipo:null,extra:[],ended:null,nextId:1,cofVest:0};
   if(c.ind==='mfg')s.mfg={lines:0,building:[],site:'none',workers:0,wage:3.7e7,wMorale:65,inv:0,recv:[0,0],plan:1,oem:true,mat:1,cert:{iatf:'none',ce:'none'},certLeft:{},yield:0.8,smart:false,fill:1,siteVal:0};
-  s.timeline=[];migrate(s);if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
+  s.timeline=[];s.rival.ceo=pickName();s.chap={i:0,start:0,fails:0};migrate(s);if(s.mode==='simple')drawHand();if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
   if(cy)addLog(`${cy.gen+1}번째 창업. 이전 엑싯 자금 중 ${won(b.cap)}를 새 회사에 투자합니다.`);
   if(c.cof!=='none'){const C=COF[c.cof];
     s.team.push({id:s.nextId++,name:pickName(),role:C.role,lv:3,skill:C.skill,salary:C.salary||0,morale:80,ten:0,ramp:1,opt:0,cof:true});
@@ -411,7 +439,7 @@ function payroll(){return s.team.reduce((a,e)=>a+(e.leave>0?0:e.salary/12),0)+s.
 function adminCap(){return 7+byRole('ops').length*14}
 function teamBonus(){const n=orgSize();let b=n>=200?4:n>=80?3:n>=30?2:n>=10?1:0;if(s.team.some(e=>!e.leave&&e.lv>=3&&(e.role==='ops'||e.role==='pm'))||s.team.some(e=>e.cof))b+=1;return b}
 function maxBlocks(){return 8+teamBonus()}
-function blocksAvail(){let b=maxBlocks();const over=orgSize()-adminCap();if(over>0)b-=Math.ceil(over/6);if(s.F.energy<20)b-=2;if(s.flags.forcedRest)b=3;if(s.flags.leave>0)b=2;return Math.max(1,b)}
+function blocksAvail(){let b=maxBlocks()-(s.flags.vacation?3:0);const over=orgSize()-adminCap();if(over>0)b-=Math.ceil(over/6);if(s.F.energy<20)b-=2;if(s.flags.forcedRest)b=3;if(s.flags.leave>0)b=2;return Math.max(1,b)}
 function allocTotal(){return Object.values(s.alloc).reduce((a,b)=>a+b,0)}
 function priceRatio(){return s.price/ind().base}
 function revenueHist(n){return s.hist.slice(-n).map(h=>h.rev)}
@@ -486,7 +514,7 @@ function simulate(){
   // ---- 제품 개발 ----
   const devs=byRole('dev').length,pms=byRole('pm').length;
   const strikeM=s.flags.strike?0.35:1;if(s.flags.strike){note('파업 진행 중. 생산성과 영업이 크게 떨어졌습니다.','bad');delete s.flags.strike;s.flags.strikeEnd=1}
-  let devPow=(pow('dev')*crunchM+A.dev*F.dev/8)*poc*CU().dev*strikeM;
+  let devPow=(pow('dev')*crunchM+A.dev*F.dev/8)*poc*CU().dev*strikeM*buffMul('dev');
   devPow*=1/(1+0.05*Math.max(0,devs-3)*(pms?0.45:1));
   if(s.debt>60)devPow*=1-(s.debt-60)/110;
   const sea=SEASON[s.ind][cal-1];
@@ -502,7 +530,7 @@ function simulate(){
   // ---- PMF ----
   const qF=s.quality/100;
   const target=s.fit*100*(0.28+0.72*qF);
-  const rate=(CU().pmf||1)*clamp(0.035+0.035*A.interview+(s.users>=pmfN()?0.03:0)+pow('data')/60*0.03+pow('pm')/70*0.02,0,0.45);
+  const rate=buffMul('pmf')*(CU().pmf||1)*clamp(0.035+0.035*A.interview+(s.users>=pmfN()?0.03:0)+pow('data')/60*0.03+pow('pm')/70*0.02,0,0.45);
   s.pmf=clamp(s.pmf+(target-s.pmf)*rate,0,100);
   s.flags.seNoise=rnd(-3,3);
   const pF=s.pmf/100;
@@ -536,7 +564,7 @@ function simulate(){
   if(s.flags.boost){organic+=s.flags.boost;s.flags.boost=0}
   const sat=Math.max(0.02,1-(s.users+s.rival.users*0.5)/TAM);
   const st=strain();
-  let newU=(organic+paid+sales)*sat/(1+st*0.8)*D().acq;
+  let newU=(organic+paid+sales)*sat/(1+st*0.8)*D().acq*buffMul('acq');
   if(s.mfg&&s.mfg.cert.iatf!=='done')newU=Math.min(newU,Math.max(0,12-s.users));
   // 마켓플레이스 공급
   let liq=1;
@@ -549,7 +577,7 @@ function simulate(){
   const csCov=(I.csBase+pow('cs')/60*I.csPer)/Math.max(1,s.users);
   const csF=csCov>=1?1:Math.min(2.6,1+1.3*(1-csCov));
   let churnR=I.churn*(1.55-pF)*(1+s.debt/130)*pChurn*csF*(s.flags.outage?1.5:1)*(s.ind==='market'?1.3-0.3*liq:1)*(1+s.comp*0.25)*(s.mfg?1+(1-s.mfg.fill)*2.5:1)*fxv('churn')*(1-s.annual*0.4)*(s.certs.isms!=='done'&&ismsReq()?1.05:1);
-  churnR*=(1+Math.min(2,st*0.6))*D().churn;churnR=clamp(churnR,0.004,0.6);
+  churnR*=(1+Math.min(2,st*0.6))*D().churn*buffMul('churn');churnR=clamp(churnR,0.004,0.6);
   const churned=s.users*churnR;
   const prevUsers=s.users;
   s.users=Math.max(0,s.users+newU-churned);
@@ -685,7 +713,7 @@ function simulate(){
   const rec={m,rev,net,cash:s.cash,users:s.users,newU,churned,churnR,paid,organic,sales,effCAC,team:headcount(),quality:s.quality,pmf:s.pmf,val:fairVal(),
     lines:{subCost:subR.rev*0.9,refund,bonusPay,recCost,factFee,prepaidNet:prepaid-amort,rev,extraRev,cogs,ship,pg,store,pay,ins,ret,rent,server,tools,misc,acct,ad,brandAd,interest,principal,grant,vatPay,corpTax,ipoCost,storage,depr,siteCost,mktCost,recvChg:rev-cashRev},
     paying,orders,gmv,liq,supply:s.supply,prevUsers,fixed,devPow,featPow,mf,op,chs,sea,prepaid,amort,insB:{np:pay*0.045,hi:pay*0.03545,lt:pay*0.03545*0.1295,ei:pay*0.0115,ia:pay*0.009}};
-  s.last=rec;s.hist.push({m,rev,cash:s.cash,users:s.users,net,op,val:rec.val,pmf:s.pmf,quality:s.quality,rival:s.rival.users,price:s.pub?s.pub.price:0});
+  s.last=rec;s.hist.push({m,newU,rev,cash:s.cash,users:s.users,net,op,val:rec.val,pmf:s.pmf,quality:s.quality,rival:s.rival.users,price:s.pub?s.pub.price:0});
   if(s.hist.length>240)s.hist.splice(0,s.hist.length-240);
   if(s.log.length>600)s.log.length=600;
   if(op>0)s.okStreak++;else s.okStreak=0;
@@ -698,12 +726,14 @@ function simulate(){
   if(calM(s.month)===1)yearEnd(note);
   if(s.month%6===0)hofUpdate(false);
   boardTick(note);
-  expTick(note);peersTick(note);
+  expTick(note);peersTick(note);chapTick(note);buffTick();delete s.flags.vacation;
   checkAch(note);
   // ---- 이벤트 ----
   s.pending=[];
   if(s.flags.yearShow){s.pending.push({live:'yearEnd',d:s.flags.yearShow});delete s.flags.yearShow}
   for(const k of ['launchDay','ipoShow','earnShow','launchShow'])if(s.flags[k]){s.pending.push({live:k,d:s.flags[k]});delete s.flags[k]}
+  for(const c of (s.flags.chapClear||[]))s.pending.push({live:'celebrate',d:{t:c.t,s:c.s}});s.flags.chapClear=[];
+  if(s.mode==='simple')drawHand();
   for(const l of (s.flags.lvUp||[]))s.pending.push(EV_LEVEL(l));s.flags.lvUp=[];
   for(const k of (s.flags.cele||[]).slice(0,2)){const c=CELE[k];s.pending.push({live:'celebrate',d:{t:c[0],s:c[1]}})}s.flags.cele=[];
   genReview();
@@ -1523,7 +1553,7 @@ function apStart(){if(AP.on||!s||s.ended)return;AP.on=true;AP.months=0;AP.startC
 function apStop(msg){AP.on=false;clearTimeout(AP.timer);AP.msg=msg||'';if(s&&!s.ended)save();render()}
 function apTick(){
   if(!AP.on)return;if(!s||s.ended){apStop();render();return}
-  aiManage();const res=simulate();sanitize();AP.months++;
+  aiManage();if(simple()&&s.hand&&s.hand.length){s.pick=s.hand[0];playCard()}const res=simulate();sanitize();AP.months++;
   const notes=res.notes;let pauseAt=-1;
   for(let i=0;i<s.pending.length;i++){const ev=s.pending[i];if(AP.stop&&isBig(ev)){pauseAt=i;break}
     if(ev.live)continue;const c=ev.choices[Math.min(aiChoose(ev),ev.choices.length-1)];const msg=c.f();sanitize();addLog(`[AI] ${ev.title} → ${c.t}${msg?': '+msg:''}`,s.month-1);if(s.ended)break;
@@ -1843,6 +1873,123 @@ function tCorp(){ensureCorp();const C=s.corp,I=ind(),P=s.pub,F=finStatements();
   <div class="panel"><h2>회사 연혁</h2><div class="log">${(s.timeline||[]).map(x=>`<div><span>${ym(x.m)}</span><span>${esc(x.t)}</span></div>`).join('')||'<p class="muted">주요 사건이 생기면 기록됩니다.</p>'}</div></div>
   </div>`}
 
+/* ============ 간단 모드: 전략 카드 · 챕터 · 라이벌 대표 ============ */
+const simple=()=>s&&s.mode==='simple';
+function buffMul(k){return (s.buffs||[]).filter(b=>b.k===k).reduce((a,b)=>a*b.m,1)}
+function addBuff(k,m,left,n){(s.buffs=s.buffs||[]).push({k,m,left,n})}
+function buffTick(){s.buffs=(s.buffs||[]).filter(b=>--b.left>0)}
+function estNew(extraSpend){const I=ind(),L=s.last;const cac=L&&L.effCAC?L.effCAC:I.cac;return Math.max(1,extraSpend/cac*clamp((s.quality-I.mvp+8)/20+0.1,0.05,1))}
+const CARDS=[
+  {k:'ads',n:'대규모 광고 캠페인',tag:'성장',w:()=>s.flags.launched?3:0,cost:()=>Math.max(1e7,Math.min(s.cash*0.08,lastRev()*1.5+2e7)),
+    fx:c=>`광고비 ${won(c)} 집행 → 신규 ${ind().unit} 약 +${num(estNew(c))}`,go:c=>{s.cash-=c;s.flags.boost=(s.flags.boost||0)+estNew(c);s.brand+=2}},
+  {k:'sprint',n:'2주 개발 스프린트',tag:'제품',w:()=>(s.buffs||[]).some(b=>b.k==='dev')?0:s.quality<85?3:1,cost:()=>0,
+    fx:()=>`3개월간 개발 속도 ×1.6 · 팀 사기 -6 · 기술부채 +5`,go:()=>{addBuff('dev',1.6,3,'개발 스프린트');s.team.forEach(e=>e.morale-=6);s.debt+=5}},
+  {k:'interview',n:'고객 100명 심층 인터뷰',tag:'제품',w:()=>(s.buffs||[]).some(b=>b.k==='pmf')?0:s.pmf<70?3:0.5,cost:()=>sc(3e6),
+    fx:c=>`${won(c)} · 3개월간 PMF 학습 ×2.5 (현재 PMF 설문 ${s.users>=pmfN()?Math.round(seanEllis())+'%':'측정불가'})`,go:c=>{s.cash-=c;addBuff('pmf',2.5,3,'고객 인터뷰')}},
+  {k:'price',n:'가격 15% 인상',tag:'수익',w:()=>s.flags.launched&&s.users>20&&priceRatio()<1.45&&!(s.flags.priceAt>s.month-6)?2:0,cost:()=>0,
+    fx:()=>`월매출 약 +${won(lastRev()*0.15*0.85)} 예상 · 일부 고객 이탈 위험`,go:()=>{s.price*=1.15;s.flags.priceAt=s.month}},
+  {k:'premium',n:'프리미엄 요금제 출시',tag:'수익',w:()=>s.quality>55&&!s.flags.premium?2:0,cost:()=>sc(1e7),
+    fx:c=>`${won(c)} · 객단가 영구 +10%`,go:c=>{s.cash-=c;s.flags.premium=1;s.fx.arpu=(s.fx.arpu||1)*1.1}},
+  {k:'star',n:'S급 인재 영입',tag:'팀',w:()=>s.cash>2e8?2:0.3,cost:()=>Math.round(rnd(1.1e8,1.6e8)/1e6)*1e6,
+    fx:c=>`연봉 ${won(c)}의 업계 최고 ${ROLES[s.flags.starRole||'dev'].name} 즉시 합류`,go:c=>{const r=s.flags.starRole||'dev';s.team.push({id:s.nextId++,name:pickName(),role:r,lv:3,skill:ri(88,97),salary:c,morale:85,ten:0,ramp:0.7,opt:0,trait:pick(['leader','grow','steady']),mil:0,leave:0});s.cash-=c*0.2;delete s.flags.starRole}},
+  {k:'roadshow',n:'투자자 로드쇼',tag:'자금',w:()=>!s.pub&&stageIdx()<6?(runway()<9?5:2):0,cost:()=>sc(5e6),
+    fx:c=>s.fund?`${won(c)} · 투자 라운드 진행률 +45%`:`${won(c)} · ${ROUNDS[stageIdx()+1].name} 라운드 시작 + 진행률 +35%`,go:c=>{s.cash-=c;if(!s.fund)startRound(stageIdx()+1);s.fund.prog=(s.fund.prog||0)+(s.fund.months?45:35)}},
+  {k:'cut',n:'비용 절감 비상경영',tag:'자금',w:()=>runway()<8?5:0.3,cost:()=>0,
+    fx:()=>`광고비 절반, 대표 급여 반납, 팀 사기 -8 → 월 지출 약 -${won(chSum()*0.5+s.F.salary)}`,go:()=>{for(const k in s.ch)s.ch[k]*=0.5;s.F.salary=0;s.team.forEach(e=>e.morale-=8);addBuff('frugal',1,6,'비상경영')}},
+  {k:'grant',n:'정부지원사업 총력전',tag:'자금',w:()=>isSME()&&s.month<84?2:0,cost:()=>0,
+    fx:()=>`대표 체력 -10 · 2~3개월 뒤 지원금 ${won(rnd(5e7,2e8))} 내외 (선정률 높음)`,go:()=>{s.F.energy-=10;const amt=Math.round(rnd(5e7,2e8)/1e6)*1e6;if(R()<0.7+D().grant)s.grants.push({at:s.month+ri(2,3),amt,left:1});else addLog('지원사업 총력전: 아쉽게 탈락했습니다.')}},
+  {k:'viral',n:'바이럴 챌린지 이벤트',tag:'도박',w:()=>s.flags.launched&&(s.ind!=='mfg')?2:0,cost:()=>sc(1.5e7),
+    fx:c=>`${won(c)} · 40% 확률로 대박(신규 대폭↑), 60%는 조용히 묻힘`,go:c=>{s.cash-=c;if(R()<0.4){s.flags.boost=(s.flags.boost||0)+s.users*0.4+tam()*0.003;s.brand+=8;s.flags.cardMsg='챌린지 영상이 터졌습니다!'}else s.flags.cardMsg='반응이 미지근했습니다.'}},
+  {k:'snipe',n:'경쟁사 고객 빼앗기',tag:'도박',w:()=>s.rival.users>s.users*0.3&&s.flags.launched?2:0,cost:()=>sc(2e7),
+    fx:c=>`${won(c)} · ${s.rival.name} 고객 대상 전환 혜택. 50% 확률로 경쟁사 고객 ${pc(0.1,0)} 흡수`,go:c=>{s.cash-=c;if(R()<0.5+s.brand/400){const x=s.rival.users*0.1;s.rival.users-=x;s.users+=x*0.7;s.flags.cardMsg=`${s.rival.name} 고객 ${num(x*0.7)}${ind().unitS}을 데려왔습니다.`}else{s.flags.cardMsg=`${s.rival.name}가 맞불을 놓아 효과가 없었습니다.`;s.comp+=0.05}}},
+  {k:'workshop',n:'제주도 팀 워크숍',tag:'팀',w:()=>s.team.length>=2?2:0,cost:()=>(s.team.length+1)*6e5,
+    fx:c=>`${won(c)} · 팀 사기 +15 · 대표 체력 +10`,go:c=>{s.cash-=c;s.team.forEach(e=>e.morale+=15);s.F.energy+=10}},
+  {k:'vacation',n:'대표 일주일 휴가',tag:'대표',w:()=>s.F.energy<55?4:0.5,cost:()=>3e6,
+    fx:()=>`대표 체력 +45 · 이번 달 대표 시간 -3칸`,go:()=>{s.F.energy+=45;s.flags.vacation=1}},
+  {k:'debt',n:'기술부채 대청소',tag:'제품',w:()=>s.debt>35?3:0,cost:()=>0,
+    fx:()=>`기술부채 ${Math.round(s.debt)} → ${Math.round(s.debt*0.5)} · 이번 달 신기능 개발 정지`,go:()=>{s.debt*=0.5;s.quality=Math.max(0,s.quality-1)}},
+  {k:'market',n:'해외 시장 진출',tag:'성장',w:()=>{const mk=MARKETS.find(x=>!s.markets[x.k]&&x.ok());return mk&&s.cash>mk.entry*3?2:0},cost:()=>MARKETS.find(x=>!s.markets[x.k]&&x.ok()).entry,
+    fx:c=>{const mk=MARKETS.find(x=>!s.markets[x.k]&&x.ok());return `${mk.name} 진출 (${won(c)}) · 시장 규모 +${pc(mk.mul,0)}`},go:c=>{const mk=MARKETS.find(x=>!s.markets[x.k]&&x.ok());s.cash-=c;s.markets[mk.k]={p:0,m:s.month}}},
+  {k:'pr',n:'언론 PR 투어',tag:'성장',w:()=>s.month>2?1.5:0,cost:()=>sc(8e6),
+    fx:c=>`${won(c)} · 브랜드 인지도 +8 · 대표 체력 -5`,go:c=>{s.cash-=c;s.brand+=8;s.F.energy-=5}},
+  {k:'partner',n:'대기업 제휴 협상',tag:'도박',w:()=>s.quality>50&&s.flags.launched?1.5:0,cost:()=>0,
+    fx:()=>`대표 체력 -8 · 60% 확률로 1년간 월 매출 +${won(Math.max(5e6,lastRev()*0.12))}`,go:()=>{s.F.energy-=8;if(R()<0.6){s.extra.push({amt:Math.max(5e6,lastRev()*0.12),left:12});s.flags.cardMsg='제휴 계약 성사!'}else s.flags.cardMsg='협상이 결렬됐습니다.'}},
+  {k:'trial',n:'무료 체험 30일 확대',tag:'성장',w:()=>s.flags.launched&&s.ind!=='mfg'&&!(s.buffs||[]).some(b=>b.k==='acq')?2:0,cost:()=>sc(5e6),
+    fx:c=>`${won(c)} · 3개월간 신규 유입 ×1.5 · 단기 매출 소폭 감소`,go:c=>{s.cash-=c;addBuff('acq',1.5,3,'무료 체험 확대');s.fx.arpu=(s.fx.arpu||1)*0.99}},
+  {k:'cs',n:'고객 성공팀 집중 투입',tag:'수익',w:()=>!(s.buffs||[]).some(b=>b.k==='churn')&&s.users>30&&s.last&&s.last.churnR>0.04?3:0,cost:()=>sc(1e7),
+    fx:c=>`${won(c)} · 3개월간 이탈률 ×0.6 (현재 월 ${s.last?pc(s.last.churnR,1):'–'})`,go:c=>{s.cash-=c;addBuff('churn',0.6,3,'고객 성공 집중')}},
+  {k:'line',n:'생산라인 긴급 증설',tag:'성장',w:()=>s.mfg&&s.mfg.site!=='none'&&s.mfg.lines+s.mfg.building.length<SITES[s.mfg.site].lines&&s.cash>LINE.capex?3:0,cost:()=>LINE.capex*0.4,
+    fx:c=>`착공금 ${won(c)} · 4개월 뒤 생산능력 +${num(LINE.cap)}개/월`,go:c=>{s.cash-=c;s.mfg.building.push({left:LINE.build});s.mfg.workers+=LINE.crew}},
+  {k:'ipo',n:'상장 준비 착수',tag:'자금',w:()=>{if(s.pub||s.ipo)return 0;const q=ipoReq();return (q.gen||q.tech)&&!q.retry?5:0},cost:()=>0,
+    fx:()=>`주관사 선정과 지정감사 시작 · 약 1년 뒤 상장`,go:()=>{const q=ipoReq();startIPO(q.gen?'gen':'tech')}},
+  {k:'mna',n:'유망 스타트업 인수',tag:'성장',w:()=>s.peers&&s.peers.length&&s.cash>Math.min(...s.peers.map(p=>p.v))*1.3*2?2:0,cost:()=>Math.min(...s.peers.map(p=>p.v))*1.3,
+    fx:c=>`${s.peers.reduce((a,p)=>p.v<a.v?p:a).n} 인수 (${won(c)}) · 연결 매출·자산 증가`,go:()=>{const i=s.peers.reduce((bi,p,k)=>p.v<s.peers[bi].v?k:bi,0);buyPeer(i)}},
+  {k:'buyback',n:'자사주 매입',tag:'주주',w:()=>s.pub&&s.cash>3e9?2:0,cost:()=>Math.min(s.cash*0.3,s.pub?s.pub.mcap*0.03:0),fx:c=>`${won(c)} · 주가 부양, 이사회 신뢰↑`,go:()=>buyback()},
+];
+function drawHand(){const pool=CARDS.filter(c=>{try{return c.w()>0}catch(e){return false}});const hand=[];
+  while(hand.length<3&&pool.length){const tot=pool.reduce((a,c)=>a+c.w(),0);let x=R()*tot,i=0;for(;i<pool.length-1;i++){x-=pool[i].w();if(x<=0)break}hand.push(pool.splice(i,1)[0].k)}
+  if(hand.includes('star'))s.flags.starRole=pick(['dev','sales','pm','mkt','data']);
+  s.hand=hand;s.pick=null}
+function cardOf(k){return CARDS.find(c=>c.k===k)}
+function playCard(){if(!s.pick)return null;const c=cardOf(s.pick);if(!c)return null;let cost=0;try{cost=c.cost()}catch(e){}if(cost>s.cash&&cost>0){toast('현금이 부족합니다.','bad');return null}
+  const before={users:s.users,cash:s.cash};delete s.flags.cardMsg;c.go(cost);sanitize();gainXP(5);s.lastCard={k:c.k,n:c.n,m:s.month,before,msg:s.flags.cardMsg||''};addLog(`전략 카드: ${c.n}${s.flags.cardMsg?' — '+s.flags.cardMsg:''}`);
+  return c}
+function kpisSimple(){const L=s.last,rw=runway(),g=growth();const k=(l,v,sub,cls='')=>`<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub||'&nbsp;'}</div></div>`;
+  return `<section class="kpis" aria-label="핵심 지표">${k('현금',won(s.cash),!L?'':rw===Infinity?'흑자 경영':`${trim(rw,1)}개월 버팀`,rw<4?'alert':'')}${k('월 매출',L?won(L.rev):'0원',L?`<span class="${g>=0?'good':'bad'}">${sgn(g)}${pc(g)} / 월</span>`:'')}${k(ind().unit,num(s.users),L?`<span class="good">+${num(L.newU)}</span> <span class="bad">-${num(L.churned)}</span>`:'')}${k(s.pub?'시가총액':'기업가치',won(compVal()),`대표 지분 ${pc(myPct())}`)}${k('대표 체력',Math.round(s.F.energy),`Lv.${lvOf(s.F.xp)} ${titleOf(lvOf(s.F.xp))}`,s.F.energy<30?'alert':'')}</section>`}
+function decision(){if(!s.hand)drawHand();
+  return `<section class="panel decide"><div class="row between"><h2>이번 달 결정 · ${calY(s.month)}년 ${calM(s.month)}월</h2><span class="note">카드 1장을 고르고 다음 달로</span></div>
+   <div class="cards3">${s.hand.map(k=>{const c=cardOf(k);if(!c)return '';let cost=0,fx='';try{cost=c.cost();fx=c.fx(cost)}catch(e){}const sel=s.pick===k,poor=cost>s.cash&&cost>0;
+     return `<button class="card ${sel?'sel':''}" data-card="${k}" ${poor||AP.on?'disabled':''}><span class="ctag t-${c.tag}">${c.tag}</span><b>${c.n}</b><span class="cfx">${esc(fx)}</span>${cost?`<span class="mono note">비용 ${won(cost)}</span>`:'<span class="mono note">비용 없음</span>'}</button>`}).join('')}</div>
+   <div class="row"><button class="btn primary big" data-act="next" ${AP.on?'disabled':''}>${s.pick&&s.pick!=='none'?`"${esc(cardOf(s.pick).n)}" 실행하고`:'카드 없이'} ${calM(s.month)}월 마감 →</button>
+    <button class="btn sm" data-auto="3" ${AP.on?'disabled':''}>카드 없이 3개월</button><button class="btn sm" data-auto="12" ${AP.on?'disabled':''}>카드 없이 1년</button></div>
+   <p class="note">시간표·채용·마케팅·지원사업·세금·메일은 AI 비서가 처리합니다. 큰 사건이 생기면 여러분에게 묻습니다.</p></section>`}
+function handPanel(){if(!s.hand)drawHand();
+  return `<div class="hand"><div class="row between"><h2>이번 달 전략 카드</h2><span class="note">1장 선택</span></div>
+   ${s.hand.map(k=>{const c=cardOf(k);if(!c)return '';let cost=0,fx='';try{cost=c.cost();fx=c.fx(cost)}catch(e){fx=''}const sel=s.pick===k,poor=cost>s.cash&&cost>0;
+     return `<button class="card ${sel?'sel':''}" data-card="${k}" ${poor?'disabled':''}><span class="ctag t-${c.tag}">${c.tag}</span><b>${c.n}</b><span class="cfx">${esc(fx)}</span>${cost?`<span class="mono note">비용 ${won(cost)}</span>`:''}</button>`}).join('')}
+   <button class="btn sm" data-card="none" ${s.pick==='none'?'aria-pressed="true"':''}>이번 달은 카드 없이 진행</button>
+   <p class="note">시간표·채용·마케팅·지원사업·세금은 AI 비서가 알아서 처리합니다.</p></div>`}
+
+/* ---- 챕터 미션 ---- */
+const FIRSTFANS={saas:10,app:1000,commerce:300,market:300,mfg:3};
+const CHAPTERS=[
+  {n:'제품 출시',d:()=>`제품 완성도 ${ind().mvp} 달성 후 정식 출시`,p:()=>s.flags.launched?1:s.quality/ind().mvp,dl:14,rw:3e7},
+  {n:'첫 번째 팬들',d:()=>`${ind().unit} ${num(FIRSTFANS[s.ind])}${ind().unitS} 확보`,p:()=>s.users/FIRSTFANS[s.ind],dl:8,rw:5e7},
+  {n:'월매출 1억',d:()=>'한 달 매출 1억원 돌파',p:()=>lastRev()/1e8,dl:18,rw:1e8},
+  {n:'기관 투자 유치',d:()=>'시드 이상 투자 라운드 클로징 (또는 월 영업이익 흑자)',p:()=>s.rounds.some(r=>r.k!=='angel')||(s.last&&s.last.op>0)?1:s.fund?(s.fund.offers||s.fund.dd?0.9:s.fund.prog/120):0,dl:14,rw:1e8},
+  {n:'PMF 증명',d:()=>'PMF 설문 "매우 실망" 40% 이상',p:()=>s.users>=pmfN()?seanEllis()/40:0,dl:18,rw:1.5e8},
+  {n:'흑자 전환',d:()=>'월 영업이익 흑자 3개월 연속',p:()=>Math.min(1,s.okStreak/3),dl:24,rw:3e8},
+  {n:'월매출 10억',d:()=>'한 달 매출 10억원 돌파',p:()=>lastRev()/1e9,dl:30,rw:5e8},
+  {n:'상장',d:()=>'코스닥 상장',p:()=>s.pub?1:s.ipo?0.5+({prep:0,tech:0.15,review:0.3,offer:0.45}[s.ipo.stage]||0):Math.min(0.45,Math.max(ipoReq().ttm/5e9,fairVal()/6e10)*0.45),dl:36,rw:1e9},
+  {n:'유니콘',d:()=>'기업가치 1조원',p:()=>compVal()/1e12,dl:48,rw:3e9},
+  {n:'중견기업',d:()=>'기업 규모 중견기업 진입',p:()=>sizeIdx(s.size||'micro')>=3?1:rev3()/(s.ind==='mfg'?1.5e11:8e10),dl:60,rw:5e9},
+  {n:'데카콘',d:()=>'기업가치 10조원',p:()=>compVal()/1e13,dl:84,rw:2e10},
+];
+function chapTick(note){const C=s.chap||(s.chap={i:0,start:0,fails:0});if(C.i>=CHAPTERS.length)return;const ch=CHAPTERS[C.i];
+  if(ch.p()>=1){const rw=ch.rw;s.cash+=rw;s.brand+=3;s.team.forEach(e=>e.morale+=5);gainXP(60+C.i*20);note(`챕터 ${C.i+1} 클리어: ${ch.n}! 보상 ${won(rw)} (투자자·멘토 지원금).`,'good');(s.flags.chapClear=s.flags.chapClear||[]).push({t:`챕터 ${C.i+1} 클리어`,s:`${ch.n} — 보상 ${won(rw)}`});C.i++;C.start=s.month;C.fails=0;C.warned=0;return}
+  const left=C.start+ch.dl*(1+C.fails*0.5)-s.month;
+  if(left===3&&!C.warned){C.warned=1;note(`챕터 ${C.i+1} "${ch.n}" 기한까지 3개월! 진행률 ${pc(Math.min(1,ch.p()),0)}.`,'bad')}
+  if(left<=0){C.fails++;C.warned=0;s.trust=clamp(s.trust-10*C.fails,0,100);s.team.forEach(e=>e.morale-=4*C.fails);s.F.energy-=5;note(`챕터 ${C.i+1} "${ch.n}" 기한 초과. 투자자와 팀이 실망했습니다 (이사회 신뢰 -${10*C.fails}). 기한이 연장됩니다.`,'bad')}}
+function chapBanner(){const C=s.chap||(s.chap={i:0,start:0,fails:0});
+  const rv=s.rival,share=s.users/Math.max(1,s.users+rv.users),rw=runway();
+  const ch=CHAPTERS[C.i];const pr=ch?clamp(ch.p(),0,1):1;const left=ch?C.start+ch.dl*(1+C.fails*0.5)-s.month:0;
+  return `<section class="banner">
+   <div class="bchap">${ch?`<div class="row between"><span class="eyebrow">CHAPTER ${C.i+1} / ${CHAPTERS.length}</span><span class="mono ${left<=3?'bad':''}">${left>0?`남은 기간 ${left}개월`:'기한 초과'}</span></div>
+     <b class="btitle">${ch.n}</b><span class="note">${esc(ch.d())} · 보상 ${won(ch.rw)}</span><div class="bar ${left<=3?'warn':''}"><i style="width:${pr*100}%"></i></div><span class="mono note">${pc(pr,0)}</span>`:'<b class="btitle">모든 챕터 클리어</b><span class="note">이제 당신만의 기록을 세우세요.</span>'}</div>
+   <div class="brival"><span class="eyebrow">라이벌 대결</span><div class="vs"><span>우리 <b class="mono">${num(s.users)}</b></span><div class="vsbar"><i style="width:${share*100}%"></i></div><span><b class="mono">${num(rv.users)}</b> ${esc(rv.name)}</span></div>
+     <span class="quote">${esc(rv.ceo||'라이벌 대표')}: "${esc(rivalQuote(share))}"</span></div>
+   ${rw<6&&rw!==Infinity?`<div class="bdanger"><span class="eyebrow">경고</span><b class="mono">현금 소진 D-${Math.max(0,Math.round(rw*30))}일</b><span class="note">${s.fund?'투자 라운드 진행 중':'로드쇼·비상경영 카드를 검토하세요'}</span></div>`:''}
+  </section>`}
+const RQ={win:['솔직히 저 회사는 상대가 안 됩니다.','6개월 안에 정리될 겁니다.','우리 고객의 절반도 안 되죠.','따라 하기만 하는 회사예요.'],close:['요즘 좀 신경 쓰이긴 하네요.','진짜 싸움은 지금부터입니다.','둘 중 하나만 살아남을 겁니다.'],lose:['…아직 끝나지 않았습니다.','숫자가 전부는 아니죠.','저희는 내실을 다지는 중입니다.','운이 좋았을 뿐입니다.']};
+function rivalQuote(share){const k=share<0.35?'win':share<0.6?'close':'lose';if(!s.rival.q||s.rival.qm!==s.month||s.rival.qk!==k){s.rival.q=pick(RQ[k]);s.rival.qm=s.month;s.rival.qk=k}return s.rival.q}
+
+/* ---- 결과 연출 ---- */
+function reasons(L){const R2=[];if(!L)return R2;const u=ind().unitS;
+  if(L.organic>=1)R2.push(['+',`자연 유입·입소문 ${num(L.organic)}${u}`]);if(L.paid>=1)R2.push(['+',`광고 ${num(L.paid)}${u}`]);if(L.sales>=1)R2.push(['+',`영업 ${num(L.sales)}${u}`]);
+  if(L.churned>=1)R2.push(['-',`이탈 ${num(L.churned)}${u} (월 ${pc(L.churnR,1)}${s.debt>50?', 기술부채 영향':strain()>0.1?', 인력 부족 영향':''})`]);
+  for(const b of s.buffs||[])R2.push(['*',`${b.n} 효과 적용 중 (${b.left}개월 남음)`]);return R2}
+function countUp(root){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;root.querySelectorAll('[data-cu]').forEach(el=>{const to=+el.dataset.cu,fmt=el.dataset.fmt;const f=fmt==='won'?won:num;let i=0;const n=18;const tick=()=>{i++;const k=1-Math.pow(1-i/n,3);el.textContent=(el.dataset.sign&&to>=0?'+':'')+f(to*k);if(i<n)setTimeout(tick,30)};tick()})}
+
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
   if(s.ended)return;
@@ -1867,10 +2014,10 @@ const app=document.getElementById('app'),modal=document.getElementById('modal'),
 function render(){
   if(!s){renderSetup();return}
   if(s.ended){renderEnd();return}
-  app.innerHTML=header()+kpis()+`<div class="main"><div class="panel" style="gap:14px">${tabs()}<div id="tabc">${tabContent()}</div></div><aside class="side">${plan()}</aside></div>`;
+  app.innerHTML=header()+(simple()?kpisSimple():kpis())+chapBanner()+(simple()?decision():'')+`<div class="main"><div class="panel" style="gap:14px">${tabs()}<div id="tabc">${tabContent()}</div></div><aside class="side">${plan()}</aside></div>`;
 }
 function header(){const I=ind();return `<header class="top"><div class="brand"><small>${esc(I.name)} · ${esc(I.ex)}</small><h1>${esc(s.co)}</h1></div>
-  <div class="row"><span class="chip ${s.climate<0.85?'bad':s.climate>1.1?'good':''}">투자심리 ${Math.round(s.climate*100)}</span><span class="chip">기준금리 ${trim(s.rate,2)}%</span><span class="chip">원/달러 ${num(s.usd)}</span>${s.pub?`${s.pub.halt?'<span class="chip bad">거래정지</span>':''}<span class="chip ${s.pub.price>=(s.pub.prev||s.pub.price)?'upbg':'downbg'}">${s.pub.market} ${num(s.pub.price)}원 ${s.pub.price>=(s.pub.prev||s.pub.price)?'▲':'▼'}${pc(Math.abs(s.pub.price/(s.pub.prev||s.pub.price)-1),1)}</span>${s.pub.warn||s.pub.auditWarn?'<span class="chip bad">관리종목</span>':''}`:`<span class="chip acc">${stageIdx()<0?'부트스트래핑':ROUNDS[stageIdx()].name+' 완료'}</span>`}${s.infinite?'<span class="chip">무한 모드</span>':''}<span class="chip">${D().n}</span>${s.union?'<span class="chip warn">노조</span>':''}<span class="chip acc">${SIZES[sizeIdx(s.size||'micro')].n}</span>
+  <div class="row"><span class="chip ${s.climate<0.85?'bad':s.climate>1.1?'good':''}">투자심리 ${Math.round(s.climate*100)}</span>${simple()?'':`<span class="chip">기준금리 ${trim(s.rate,2)}%</span><span class="chip">원/달러 ${num(s.usd)}</span>`}${s.pub?`${s.pub.halt?'<span class="chip bad">거래정지</span>':''}<span class="chip ${s.pub.price>=(s.pub.prev||s.pub.price)?'upbg':'downbg'}">${s.pub.market} ${num(s.pub.price)}원 ${s.pub.price>=(s.pub.prev||s.pub.price)?'▲':'▼'}${pc(Math.abs(s.pub.price/(s.pub.prev||s.pub.price)-1),1)}</span>${s.pub.warn||s.pub.auditWarn?'<span class="chip bad">관리종목</span>':''}`:`<span class="chip acc">${stageIdx()<0?'부트스트래핑':ROUNDS[stageIdx()].name+' 완료'}</span>`}${s.infinite?'<span class="chip">무한 모드</span>':''}<span class="chip">${D().n}</span>${s.union?'<span class="chip warn">노조</span>':''}<span class="chip acc">${SIZES[sizeIdx(s.size||'micro')].n}</span>
   <div class="date"><b>${calY(s.month)}년 ${calM(s.month)}월</b>업력 ${s.month}개월</div></div></header>${tickerHTML()}`}
 function kpis(){
   const I=ind(),L=s.last,rw=runway(),g=growth();
@@ -1888,8 +2035,9 @@ function kpis(){
    ${s.pub?k('시가총액',won(s.pub.mcap),`주가 ${num(s.pub.price)}원 · 공모가 대비 <span class="${s.pub.price>=s.pub.ipoPrice?'good':'bad'}">${sgn(s.pub.price/s.pub.ipoPrice-1)}${pc(s.pub.price/s.pub.ipoPrice-1,0)}</span>`):k('추정 기업가치',won(fairVal()),`대표 지분 ${pc(myPct())}`)}
    ${k('대표 순자산',won(netWorth()),`개인 자산 ${won(s.wealth)} · 지분 ${pc(myPct())}`)}
   </section>`}
-function tabs(){const T=[['dash','현황'],['prod','제품·마케팅'],...(s.mfg?[['mfg','생산']]:[]),['team','팀'],['fin','재무'],['inv',s.pub?'주식·투자':'투자·지원'],['grow','성장·업적'],['news','뉴스'],['corp','회사'],...(s.pub?[['board','종목토론방']]:[]),['log','기록']];
-  return `<div class="tabs" role="tablist">${T.map(([k,n])=>`<button class="tab" role="tab" aria-selected="${ui.tab===k}" data-tab="${k}">${n}${k==='team'&&s.cands.length?` <span class="chip">${s.cands.length}</span>`:''}${k==='inv'&&s.fund&&s.fund.offers?' <span class="chip good">텀시트</span>':''}</button>`).join('')}</div>`}
+function tabs(){const T0=[['dash','현황'],['prod','제품·마케팅'],...(s.mfg?[['mfg','생산']]:[]),['team','팀'],['fin','재무'],['inv',s.pub?'주식·투자':'투자·지원'],['grow','성장·업적'],['news','뉴스'],['corp','회사'],...(s.pub?[['board','종목토론방']]:[]),['log','기록']];
+  const keep=['dash','team','inv','board','news','log'];const T=simple()&&!ui.showAll?T0.filter(x=>keep.includes(x[0])):T0;
+  return `<div class="tabs" role="tablist">${simple()?`<button class="tab" data-act="showAll">${ui.showAll?'간단히':'더보기 +'}</button>`:''}${T.map(([k,n])=>`<button class="tab" role="tab" aria-selected="${ui.tab===k}" data-tab="${k}">${n}${k==='team'&&s.cands.length?` <span class="chip">${s.cands.length}</span>`:''}${k==='inv'&&s.fund&&s.fund.offers?' <span class="chip good">텀시트</span>':''}</button>`).join('')}</div>`}
 function tabContent(){return (({dash:tDash,prod:tProd,mfg:tMfg,team:tTeam,fin:tFin,inv:tInv,grow:tGrow,news:tNews,corp:tCorp,board:tBoard,log:tLog})[ui.tab]||tDash)()}
 
 function meter(label,v,max=100,cls='',right){return `<div class="meter"><div class="row between"><span>${label}</span><span class="mono">${right??Math.round(v)}</span></div><div class="bar ${cls}"><i style="width:${clamp(v/max*100,0,100)}%"></i></div></div>`}
@@ -1928,7 +2076,8 @@ function tDash(){
   if(headcount()+1>OFFICES[s.office].cap)warn.push(`<div class="callout">사무실 정원 초과 (${headcount()+1}/${OFFICES[s.office].cap}). 팀 사기가 떨어집니다.</div>`);
   if(s.users>=pmfN()&&se>=40)warn.push(`<div class="callout good">PMF 신호: 사용자의 ${Math.round(se)}%가 "이 제품이 없어지면 매우 실망"이라고 답했습니다. 이제 성장에 돈을 쓸 때입니다.</div>`);
   const tips=mentorTips();
-  return `<div style="display:flex;flex-direction:column;gap:14px">${inboxPanel()}${tips.length?`<div class="panel mentor"><h3>멘토의 조언</h3>${tips.map(x=>`<div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><span>${esc(x.t)}</span>${x.tab?`<button class="btn sm" data-tab="${x.tab}" style="flex:none">이동</button>`:''}</div>`).join('')}</div>`:''}${warn.join('')}
+  const lite=simple()&&!ui.showAll;
+  return `<div style="display:flex;flex-direction:column;gap:14px">${inboxPanel()}${!lite&&tips.length?`<div class="panel mentor"><h3>멘토의 조언</h3>${tips.map(x=>`<div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><span>${esc(x.t)}</span>${x.tab?`<button class="btn sm" data-tab="${x.tab}" style="flex:none">이동</button>`:''}</div>`).join('')}</div>`:''}${lite?'':warn.join('')}
   <div class="grid2">
     <div class="panel"><h3>매출 · 현금</h3>${chart([{n:'현금',c:'var(--info)',get:h=>h.cash},{n:'월 매출',c:'var(--accent)',get:h=>h.rev,area:true}])}</div>
     <div class="panel"><h3>${I.unit} · 경쟁사</h3>${chart([{n:'우리 '+I.unit,c:'var(--accent)',get:h=>h.users,area:true},{n:s.rival.name,c:'var(--bad)',get:h=>h.rival||0}],{fmt:v=>num(v)})}</div>
@@ -1956,9 +2105,9 @@ function tDash(){
       ${L.mf?`<tr><td>월 수요 / 판매</td><td class="r mono">${num(L.mf.demand)} / ${num(L.mf.sold)}개</td></tr><tr><td>납기 충족률</td><td class="r mono ${L.mf.fill<0.95?'bad':''}">${pc(L.mf.fill,0)}</td></tr>`:''}
     </tbody></table>`:'<p class="muted">첫 달을 진행하면 표시됩니다.</p>'}</div>
   </div>
-  ${(s.news||[]).length?`<div class="panel"><h3>언론 보도</h3><div class="log">${s.news.map(n=>`<div><span>${ym(n.m)}</span><span><span class="chip ${n.c==='good'?'good':'bad'}">${esc(n.o)}</span> ${esc(n.h)}</span></div>`).join('')}</div></div>`:''}
-  ${cohortTable()}
-  ${u?`<div class="panel"><h3>유닛 이코노믹스</h3><div class="grid3">
+  ${!lite&&(s.news||[]).length?`<div class="panel"><h3>언론 보도</h3><div class="log">${s.news.map(n=>`<div><span>${ym(n.m)}</span><span><span class="chip ${n.c==='good'?'good':'bad'}">${esc(n.o)}</span> ${esc(n.h)}</span></div>`).join('')}</div></div>`:''}
+  ${lite?'':cohortTable()}
+  ${!lite&&u?`<div class="panel"><h3>유닛 이코노믹스</h3><div class="grid3">
     <div><div class="muted note">ARPU (월)</div><div class="mono" style="font-size:18px">${won(u.arpu)}</div></div>
     <div><div class="muted note">공헌이익률</div><div class="mono" style="font-size:18px">${pc(u.gm,0)}</div></div>
     <div><div class="muted note">LTV</div><div class="mono" style="font-size:18px">${won(u.ltv)}</div></div>
@@ -2315,6 +2464,7 @@ function plan(){
   const A=s.alloc,av=blocksAvail(),used=allocTotal(),F=s.F;
   const est=payroll()*1.105+officeCost()+(ind().serverBase+s.users*ind().serverPer)+(headcount()+1)*280000+250000+chSum()+(s.mfg?SITES[s.mfg.site].fixed:0)+MARKETS.reduce((a,mk)=>a+(s.markets[mk.k]?mk.mo:0),0);
   return `<div class="panel">
+   ${simple()?``:`
    <div class="row between"><h2>이번 달 시간표</h2><span class="mono">${used}/${av}</span></div>
    <div class="blocks" aria-hidden="true">${Array.from({length:maxBlocks()},(_,i)=>`<i class="${i<used?'on':''}" style="${i>=av?'opacity:.25':''}"></i>`).join('')}</div>
    ${(()=>{const t0=mentorTips()[0];return t0?`<div class="callout good" style="font-size:12.5px"><b>멘토</b> ${esc(t0.t)}</div>`:''})()}
@@ -2322,7 +2472,7 @@ function plan(){
    ${teamBonus()?`<p class="note good">팀 규모 보너스 +${teamBonus()}칸 (업무 위임)</p>`:`<p class="note">직원 10·30·80·200명, 리드급 PM·경영지원 또는 공동창업자가 있으면 시간표가 늘어납니다.</p>`}
    ${av<maxBlocks()?`<p class="note warn">${s.flags.leave>0?`요양 중 (${s.flags.leave}개월 남음): 2칸만 사용 가능`:s.flags.forcedRest?'휴식 중: 3칸만 사용 가능':F.energy<20?'체력 부족으로 시간 감소':'조직 관리 부담으로 시간 감소'}</p>`:''}
    <div>${ACTS.map(a=>`<div class="act"><span class="n">${a.n}</span><span class="d">${a.d}${a.k==='dev'?` (개발역량 ${F.dev})`:a.k==='sales'?` (영업역량 ${F.sales})`:a.k==='ir'?` (네트워크 ${F.network})`:''}</span>
-     <div class="stepper"><button data-dec="${a.k}" aria-label="${a.n} 줄이기">−</button><b>${A[a.k]}</b><button data-inc="${a.k}" aria-label="${a.n} 늘리기">+</button></div></div>`).join('')}</div>
+     <div class="stepper"><button data-dec="${a.k}" aria-label="${a.n} 줄이기">−</button><b>${A[a.k]}</b><button data-inc="${a.k}" aria-label="${a.n} 늘리기">+</button></div></div>`).join('')}</div>`}
    <div class="row between"><span><b>${esc(s.fname)}</b> <span class="chip acc">Lv.${lvOf(F.xp)} ${titleOf(lvOf(F.xp))}</span></span><span class="note mono">개발 ${F.dev} · 영업 ${F.sales} · 인맥 ${F.network}</span></div>
    ${meter('경험치',((F.xp||0)-60*Math.pow(lvOf(F.xp)-1,2))/(60*(Math.pow(lvOf(F.xp),2)-Math.pow(lvOf(F.xp)-1,2)))*100,100,'',`다음 레벨까지 ${Math.ceil(60*Math.pow(lvOf(F.xp),2)-(F.xp||0))}`)}
    ${meter('대표 체력',F.energy,100,F.energy<30?'bad':F.energy<50?'warn':'')}
@@ -2336,10 +2486,10 @@ function plan(){
     ${AP.msg?`<p class="note warn">${esc(AP.msg)}</p>`:''}
     ${!AP.on&&AP.months?`<p class="note">지난 자동 플레이: ${AP.months}개월, 현금 ${won(AP.startCash)} → ${won(s.cash)}. 기록 탭에서 [AI] 결정 내역을 볼 수 있습니다.</p>`:''}
     <p class="note">AI가 시간표·마케팅·채용·투자·지원사업·인증·이벤트 선택을 대신합니다. 안정형은 아끼고, 공격형은 크게 쓰며 키웁니다.</p></div>
-   <button class="btn primary" data-act="next" style="padding:12px" ${AP.on?'disabled':''}>${calM(s.month)}월 마감하고 다음 달로 →</button>
+   ${simple()?'':`<button class="btn primary" data-act="next" style="padding:12px" ${AP.on?'disabled':''}>${calM(s.month)}월 마감하고 다음 달로 →</button>
    <div class="row"><button class="btn sm" data-auto="3" style="flex:1" ${AP.on?'disabled':''}>3개월 자동 진행</button><button class="btn sm" data-auto="12" style="flex:1" ${AP.on?'disabled':''}>1년 자동 진행</button></div>
-   <p class="note">자동 진행은 같은 시간표로 진행하다가 결정할 일이 생기면 멈춥니다.</p>
-   <div class="row between"><button class="btn sm" data-act="theme">테마 전환</button>${ui.confirm==='quit'?`<button class="btn sm danger" data-act="quitYes">정말 청산</button>`:`<button class="btn sm" data-act="quit">회사 청산</button>`}</div>
+   <p class="note">자동 진행은 같은 시간표로 진행하다가 결정할 일이 생기면 멈춥니다.</p>`}
+   <div class="row between"><button class="btn sm" data-act="theme">테마 전환</button><button class="btn sm" data-act="modeSwitch">${simple()?'전문가 모드로':'간단 모드로'}</button>${ui.confirm==='quit'?`<button class="btn sm danger" data-act="quitYes">정말 청산</button>`:`<button class="btn sm" data-act="quit">회사 청산</button>`}</div>
   </div>`}
 
 /* ============ 셋업 & 엔딩 ============ */
@@ -2364,6 +2514,9 @@ function renderSetup(){
    <div class="field"><label>창업자 배경</label><div class="opts">${Object.entries(BG).map(([k,v])=>opt('bg',k,v,`<em>자본 ${won(S.carry?S.carry.cap:v.cap)} · 개발 ${v.dev} · 영업 ${v.sales} · 인맥 ${v.network}</em>`)).join('')}</div></div>
    <div class="field"><label>공동창업자</label><div class="opts">${Object.entries(COF).map(([k,v])=>opt('cof',k,v)).join('')}</div>
     <label class="row note"><input type="checkbox" id="vest" ${S.vest?'checked':''}> 주주간계약에 4년 베스팅(1년 클리프) 조항 넣기</label></div>
+   <div class="field"><label>플레이 방식</label><div class="opts">
+     <button class="opt" data-set="mode" data-v="simple" aria-pressed="${S.mode!=='expert'}"><b>간단 모드 (추천)</b><span>매달 전략 카드 1장만 고르세요. 시간표·채용·마케팅·지원사업·세금은 AI 비서가 처리합니다. 챕터 미션과 라이벌 대결에 집중.</span></button>
+     <button class="opt" data-set="mode" data-v="expert" aria-pressed="${S.mode==='expert'}"><b>전문가 모드</b><span>시간표 8칸, 채용, 마케팅 채널, 정부지원, 인증까지 모든 것을 직접 결정합니다.</span></button></div></div>
    <div class="field"><label>난이도</label><div class="opts">${Object.entries(DIFF).map(([k,v])=>`<button class="opt" data-set="diff" data-v="${k}" aria-pressed="${S.diff===k}"><b>${v.n}</b><span>${v.d}</span></button>`).join('')}</div></div>
    <div class="field"><label>게임 모드</label><div class="opts">
      <button class="opt" data-set="inf" data-v="1" aria-pressed="${S.inf}"><b>무한 모드</b><span>시간 제한 없음. 상장 후에도 회사를 계속 키웁니다. 번아웃은 요양으로 대체됩니다.</span></button>
@@ -2390,20 +2543,28 @@ function renderEnd(){
 
 /* ============ 모달 ============ */
 let queue=[];
-function autoRun(n){let all=[],res=null,k=0;for(;k<n;k++){res=simulate();sanitize();all.push(...res.notes);if(s.ended||s.pending.length||s.cash<0)break}
+function autoRun(n){let all=[],res=null,k=0;if(simple())s.pick=null;for(;k<n;k++){if(simple()){aiManage()}res=simulate();sanitize();all.push(...res.notes);if(s.ended||s.pending.length||s.cash<0)break}
   res.notes=all;res.months=k+1;if(!s.ended)save();showReport(res)}
 function showReport(res){
   const L=res.rec;
   const items=res.notes.slice(-40).map(n=>`<li class="${n.c||''}">${esc(n.t)}</li>`).join('');
   queue.push({report:true,html:`<span class="eyebrow">${ym(L.m)} ${res.months>1?res.months+'개월 자동 진행':'월간 결산'}</span><h2>${calY(L.m)}년 ${calM(L.m)}월 마감</h2>
-   <div class="grid3">
+   ${s.lastCard&&s.lastCard.m===L.m?`<div class="cardres"><b>이번 달 전략: ${esc(s.lastCard.n)}</b>${s.lastCard.msg?` — ${esc(s.lastCard.msg)}`:''}<div class="note">신규 ${ind().unit} <b>${num(L.newU)}${ind().unitS}</b>${s.hist.length>=2&&s.hist[s.hist.length-2].newU!=null?` · 지난달 ${num(s.hist[s.hist.length-2].newU)}${ind().unitS} 대비 <b class="${L.newU>=s.hist[s.hist.length-2].newU?'good':'bad'}">${sgn(L.newU-s.hist[s.hist.length-2].newU)}${num(L.newU-s.hist[s.hist.length-2].newU)}</b>`:''} · 현금 ${sgn(s.cash-s.lastCard.before.cash)}${won(s.cash-s.lastCard.before.cash)}</div></div>`:''}
+   <div class="bigres">
+    <div><div class="note">현금</div><div class="v" data-cu="${Math.round(s.cash)}" data-fmt="won">${won(s.cash)}</div><div class="note mono ${L.net<0?'bad':'good'}">${L.net>=0?'+':''}${won(L.net)}</div></div>
+    <div><div class="note">월 매출</div><div class="v" data-cu="${Math.round(L.rev)}" data-fmt="won">${won(L.rev)}</div><div class="note mono">${s.hist.length>1?`${sgn(L.rev-s.hist[s.hist.length-2].rev)}${won(L.rev-s.hist[s.hist.length-2].rev)}`:''}</div></div>
+    <div><div class="note">${ind().unit}</div><div class="v" data-cu="${Math.round(s.users)}">${num(s.users)}</div><div class="note mono ${L.newU-L.churned>=0?'good':'bad'}">${sgn(L.newU-L.churned)}${num(L.newU-L.churned)}</div></div>
+    <div><div class="note">${s.pub?'주가':'기업가치'}</div><div class="v">${s.pub?num(s.pub.price)+'원':won(fairVal())}</div><div class="note mono">${s.pub?`${sgn(s.pub.price/(s.pub.prev||s.pub.price)-1)}${pc(s.pub.price/(s.pub.prev||s.pub.price)-1,1)}`:''}</div></div>
+   </div>
+   <div class="why"><b>이번 달 변화의 이유</b>${reasons(L).map(([k,t_])=>`<div><span class="${k==='+'?'p':k==='-'?'m':''}">${k==='*'?'•':k}</span> ${esc(t_)}</div>`).join('')}</div>
+   <details><summary class="note">세부 지표</summary><div class="grid3">
     <div><div class="note">매출</div><div class="mono" style="font-size:18px">${won(L.rev)}</div></div>
     <div><div class="note">순현금흐름</div><div class="mono ${L.net<0?'bad':'good'}" style="font-size:18px">${L.net>=0?'+':''}${won(L.net)}</div></div>
     <div><div class="note">현금 잔고</div><div class="mono" style="font-size:18px">${won(s.cash)}</div></div>
     <div><div class="note">${ind().unit}</div><div class="mono" style="font-size:18px">${num(s.users)} <span class="note good">+${num(L.newU)}</span></div></div>
     <div><div class="note">제품 완성도</div><div class="mono" style="font-size:18px">${Math.round(s.quality)}</div></div>
     <div><div class="note">대표 체력</div><div class="mono ${s.F.energy<30?'bad':''}" style="font-size:18px">${Math.round(s.F.energy)}</div></div>
-   </div>${items?`<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${items}</ul>`:'<p class="muted">특별한 일 없이 지나간 한 달.</p>'}`});
+   </div></details>${items?`<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${items}</ul>`:'<p class="muted">특별한 일 없이 지나간 한 달.</p>'}`});
   const lv=s.pending.filter(e=>e.live);const rep=queue.pop();for(const x of lv)queue.push({live:x});queue.push(rep);
   for(const ev of s.pending)if(!ev.live)queue.push({ev});
   s.pending=[];
@@ -2416,7 +2577,7 @@ function nextModal(){
   modal.hidden=false;
   sheet.classList.remove('wide');
   if(q.live){const L=q.live;if(L.live==='lc')showLC(L.d);else if(L.live==='earnShow')showEarn(L.d);else if(L.live==='ipoShow')showIPO(L.d);else if(L.live==='launchDay')showLaunchDay(L.d);else if(L.live==='celebrate')showCelebrate(L.d);else if(L.live==='yearEnd')showYearEnd(L.d);else showLaunch(L.d);sheet._q=q;return}
-  if(q.report){sheet.innerHTML=q.html+`<button class="btn primary" data-m="ok">확인</button>`}
+  if(q.report){sheet.innerHTML=q.html+`<button class="btn primary" data-m="ok">확인</button>`;countUp(sheet)}
   else{const ev=q.ev;sheet.innerHTML=`<span class="eyebrow">${esc(ev.eb)}</span><h2>${esc(ev.title)}</h2><p>${esc(ev.body)}</p><div class="choices">${ev.choices.map((c,i)=>`<button class="choice" data-c="${i}"><b>${esc(c.t)}</b>${c.d?`<small>${esc(c.d)}</small>`:''}</button>`).join('')}</div>`;sheet._ev=ev}
   sheet._q=q;const b=sheet.querySelector('button');if(b)b.focus({preventScroll:true});
 }
@@ -2460,6 +2621,7 @@ app.addEventListener('click',e=>{
   if(d.life){lifeAct(d.life);render();return}
   if(d.exp){runExp(d.exp);render();return}
   if(d.lc){startLiveCommerce(d.lc);return}
+  if(d.card){s.pick=d.card;render();return}
   if(d.ncat){ui.newsCat=d.ncat;render();return}
   if(d.mail){inboxAnswer(+d.mail,+d.mi);render();return}
   if(d.adr){startADR(d.adr);render();return}
@@ -2483,10 +2645,12 @@ app.addEventListener('click',e=>{
   if(a==='start'){const S=ui.setup;S.name=(document.getElementById('fname').value||'').trim();S.co=(document.getElementById('coname').value||'').trim();S.vest=document.getElementById('vest').checked;newGame(S);ui.tab='dash';render();window.scrollTo(0,0);return}
   if(a==='continue'){s=load();render();return}
   if(a==='restart'){apStop();s=null;ui.setup.carry=null;render();window.scrollTo(0,0);return}
+  if(a==='showAll'){ui.showAll=!ui.showAll;if(!ui.showAll&&!['dash','team','inv','board','news','log'].includes(ui.tab))ui.tab='dash';render();return}
+  if(a==='modeSwitch'){s.mode=simple()?'expert':'simple';if(simple())drawHand();render();return}
   if(a==='apStart'){apStart();return}
   if(a==='apStop'){apStop('정지했습니다.');return}
   if(a==='aiPlan'){aiManage();toast('AI 추천을 이번 달 계획에 적용했습니다.','good');render();return}
-  if(a==='next'){if(AP.on)return;ui.confirm=null;const res=simulate();sanitize();if(!s.ended)save();showReport(res);return}
+  if(a==='next'){if(AP.on)return;ui.confirm=null;if(simple()){aiManage();playCard()}const res=simulate();sanitize();if(!s.ended)save();showReport(res);return}
   if(a==='move'){const k=document.getElementById('office').value;if(k===s.office)return;const o=OFFICES[k];
     if(o.apply){s.gov.center='apply';toast('입주 신청서를 냈습니다. 다음 달 결과가 나옵니다.');render();return}
     s.cash+=s.deposit;s.deposit=o.deposit;s.cash-=o.deposit+o.move;s.office=k;addLog(`${o.name}(으)로 이전. 보증금 ${won(o.deposit)}, 이전·인테리어 ${won(o.move)}.`);render();return}
