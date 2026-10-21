@@ -249,6 +249,10 @@ td.r,th.r{text-align:right}
 .ach div.on{opacity:1;border-style:solid;border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 50%,var(--surface))}
 .ach b{font-size:13px}.ach span{font-size:11.5px;color:var(--muted)}.ach em{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(8px);opacity:.6}}}
+.ng-face{font-size:1.05rem;padding:14px;border:1px dashed var(--line);border-radius:10px;margin:12px 0;text-align:center}
+.qzbar{height:6px;background:var(--sunk);border-radius:4px;overflow:hidden;margin:8px 0 12px}.qzbar i{display:block;height:100%;width:100%;background:var(--accent)}
+.choice.qz-ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,transparent)}.choice.qz-no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,transparent)}
+#officeCv{cursor:pointer}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -1033,6 +1037,13 @@ function EV_CRISIS(){
 }
 function EV_TIMEOUT(){return {eb:'창업 10년',title:'10년의 여정이 끝났습니다',body:'창업 10주년. 회사의 현재 가치로 성적을 매깁니다.',choices:[{t:'결산 보기',d:'',f:()=>{endGame('timeout',fairVal());return ''}}]}}
 const EVENTS=[
+  {w:()=>!s.pub&&s.month>5&&!(s.flags.demoAt>s.month-16)?0.035:0,mk:()=>{s.flags.demoAt=s.month;return {eb:'데모데이',title:'데모데이 본선 무대에 초대받았습니다',body:'VC 200명 앞에서 5분 피칭 후 심사위원 Q&A가 이어집니다. 숫자에 강한 대표인지 보여줄 기회입니다.',choices:[
+    {t:'이번엔 사양한다',d:'',f:()=>'제품 개발에 집중하기로 했습니다.'},
+    {t:'무대에 오른다 (미니게임)',d:'5문제 스타트업 퀴즈, 문제당 9초. 4개 이상 맞히면 최우수상',f:()=>{queue.unshift({mini:demoMini()});return '조명이 켜지고 마이크가 넘어옵니다…'}}]}}},
+  {w:()=>(s.ind==='commerce'||s.ind==='app'||s.ind==='market')&&s.flags.launched&&s.users>200&&!(s.flags.dealAt>s.month-10)?0.05:0,mk:()=>{s.flags.dealAt=s.month;const buyer={commerce:'대형마트 PB사업부',app:'통신 3사 제휴팀',market:'대기업 임직원 복지몰'}[s.ind];const val=Math.max(6e7,coreRev()*rnd(1.2,3));return {eb:'제휴 협상',title:`${buyer}가 연 ${won(val)} 규모 제휴를 제안했습니다`,body:'표준 조건은 수수료를 떼고 정가의 75%입니다. 직접 협상하면 더 받아낼 수도, 날릴 수도 있습니다.',choices:[
+    {t:'표준 조건 수락 (정가 75%)',d:'확실한 1년 계약',f:()=>{s.extra.push({amt:val*0.75/12,left:12});s.brand+=2;return `제휴 성사. 1년간 월 ${won(val*0.75/12)}.`}},
+    {t:'직접 협상한다 (미니게임)',d:'가격을 직접 부릅니다. 기회 3번',f:()=>{queue.unshift({mini:negoMini(val,12,buyer)});return '협상 테이블에 앉았습니다.'}},
+    {t:'거절',d:'',f:()=>'우리 브랜드 가치를 지키기로 했습니다.'}]}}},
   {w:()=>s.debt>40&&s.users>30?(s.debt-30)/90:0,mk:()=>({eb:'장애 알림',title:'새벽 2시, 서비스 전면 장애',body:`트래픽 급증과 쌓인 기술부채(${Math.round(s.debt)})로 DB가 뻗었습니다. 고객 문의가 폭주합니다.`,choices:[
     {t:'전원 밤샘 복구',d:'대표 체력 -12, 팀 사기 -4',f:()=>{s.F.energy-=12;s.team.forEach(e=>e.morale-=4);s.debt-=4;return '6시간 만에 복구. 다들 지쳤습니다.'}},
     {t:'클라우드 파트너사 긴급 지원 요청',d:`비용 ${won(sc(8e6))}`,f:()=>{s.cash-=sc(8e6);s.debt-=3;return '전문가 투입으로 2시간 만에 복구.'}},
@@ -1204,7 +1215,8 @@ const EVENTS=[
   {w:()=>(s.ind==='saas'||s.ind==='mfg')&&s.quality>60&&s.users>15&&!(s.flags.dealAt>s.month-10)?0.07:0,mk:()=>{s.flags.dealAt=s.month;const buyer=pick(['국내 5대 그룹 계열사','글로벌 완성차 1차 벤더','대형 금융지주','공기업']);const val=Math.max(1e8,coreRev()*rnd(1.5,4));return {eb:'대형 계약 협상',title:`${buyer}와 연 ${won(val)} 규모 계약 막판 협상`,body:'구매팀이 가격 인하를 요구합니다. 경쟁사도 최종 후보에 올라 있습니다. 어떤 카드를 내밀까요?',choices:[
     {t:'정가 고수 — 가치를 믿는다',d:'성사 확률 약 35%, 성사 시 마진 최고',f:()=>{if(R()<0.35+s.brand/400){s.extra.push({amt:val/12,left:24});s.brand+=4;gainXP(30);return `정가로 계약 성사! 2년간 월 ${won(val/12)}.`}s.rival.users*=1.02;return `${s.rival.name}에 계약을 뺏겼습니다.`}},
     {t:'15% 할인 + 전담 매니저 배정',d:'성사 확률 약 70%',f:()=>{if(R()<0.7){s.extra.push({amt:val*0.85/12,left:24});s.brand+=2;gainXP(20);return `계약 성사. 월 ${won(val*0.85/12)}.`}return '막판에 경쟁사가 더 낮은 가격을 불렀습니다.'}},
-    {t:'30% 할인으로 무조건 따낸다',d:'성사 확률 약 95%, 레퍼런스 확보, 마진 낮음',f:()=>{if(R()<0.95){s.extra.push({amt:val*0.7/12,left:24});s.brand+=5;return `레퍼런스 고객 확보. 월 ${won(val*0.7/12)}. 다른 고객들도 할인을 요구할지 모릅니다.`}return '그래도 실패했습니다.'}}]}}},
+    {t:'30% 할인으로 무조건 따낸다',d:'성사 확률 약 95%, 레퍼런스 확보, 마진 낮음',f:()=>{if(R()<0.95){s.extra.push({amt:val*0.7/12,left:24});s.brand+=5;return `레퍼런스 고객 확보. 월 ${won(val*0.7/12)}. 다른 고객들도 할인을 요구할지 모릅니다.`}return '그래도 실패했습니다.'}},
+    {t:'직접 단가 협상 (미니게임)',d:'가격을 직접 부릅니다. 상대 예산 안이면 즉시 성사, 기회 3번',f:()=>{queue.unshift({mini:negoMini(val,24,buyer)});return '구매팀 회의실로 들어갑니다.'}}]}}},
   {w:()=>s.rival.users>s.users*1.5&&s.month>24&&!s.rival.listed&&!(s.flags.rivalIpoAt>s.month-36)?0.03:0,mk:()=>{s.flags.rivalIpoAt=s.month;s.rival.listed=1;return {eb:'경쟁사',title:`${s.rival.name}가 코스닥에 상장했습니다`,body:'공모로 대규모 자금을 확보했고, 언론은 "업계 1위 굳히기"라고 보도합니다.',choices:[{t:'확인',d:'경쟁 압력 상승',f:()=>{s.comp+=0.15;s.rival.g=Math.min(0.05,s.rival.g+0.008);return ''}}]}}},
   {w:()=>s.rival.users<s.users*0.3&&s.month>24?0.03:0,mk:()=>{const old=s.rival.name;return {eb:'경쟁사',title:`${old}가 경영난으로 서비스 종료를 발표했습니다`,body:`남은 고객 ${num(s.rival.users)}${ind().unitS}이 갈 곳을 찾고 있습니다.`,choices:[
     {t:'이관 프로모션으로 고객 흡수',d:`비용 ${won(sc(2e7))}`,f:()=>{s.cash-=sc(2e7);s.users+=s.rival.users*0.45;s.rival={name:pick(RIVALS.filter(n=>n!==old)),users:tam()*0.002,g:rnd(0.015,0.04)};gainXP(25);return `고객 상당수를 흡수했습니다. 그사이 새 경쟁자 ${s.rival.name}가 등장했습니다.`}},
@@ -2117,14 +2129,19 @@ function EV_TERM(){const f=s.fund,r=ROUNDS[f.i];const o=f.offers.reduce((a,b)=>b
 const ROLE_COLOR={dev:'#3D7BD9',design:'#9B5DE5',pm:'#2A9D8F',sales:'#F08A24',mkt:'#E5508A',cs:'#3BA55C',data:'#E2B714',ops:'#8A8F98',qa:'#6B7F99'};
 const BUBBLES={dev:['배포 완료!','버그 수정','코드 리뷰…','PR 올림'],sales:['계약 성사!','미팅 중','견적 발송'],cs:['문의 처리','고객님~','해결했어요'],mkt:['광고 집행','캠페인!'],design:['시안 v3','픽셀 조정'],pm:['로드맵','스프린트'],data:['대시보드','A/B 결과'],ops:['급여 정산','계약서'],qa:['불량 0!','검수 중']};
 let OFF={raf:0,t0:0,cust:[],coins:[],bub:[]};
-function officeHTML(){return `<div class="panel office"><div class="row between"><h3>${esc(s.co)} · ${esc((OFFICES[s.office]||{}).name||'')}</h3><span class="note mono">${num(orgSize())}명 · ${s.crunch?'야근 중':'근무 중'}</span></div><canvas id="officeCv" height="200" aria-label="사무실 모습"></canvas></div>`}
+function officeHTML(){return `<div class="panel office"><div class="row between"><h3>${esc(s.co)} · ${esc((OFFICES[s.office]||{}).name||'')}</h3><span class="note mono">${num(orgSize())}명 · ${s.crunch?'야근 중':'근무 중'} · 직원을 눌러 격려</span></div><canvas id="officeCv" height="200" aria-label="사무실 모습"></canvas></div>`}
 function startOffice(){cancelAnimationFrame(OFF.raf);const cv=document.getElementById('officeCv');if(!cv)return;const dpr=Math.min(2,window.devicePixelRatio||1);const W=cv.clientWidth||600,H=200;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
   const css=getComputedStyle(document.documentElement),C=k=>css.getPropertyValue(k).trim()||'#888';
-  const people=[{role:'ceo'}].concat(s.team.filter(e=>!e.leave).slice(0,59).map(e=>({role:e.role,mor:e.morale})));const extra=Math.max(0,orgSize()-people.length);
+  const people=[{role:'ceo'}].concat(s.team.filter(e=>!e.leave).slice(0,59).map(e=>({role:e.role,mor:e.morale,e})));const extra=Math.max(0,orgSize()-people.length);
   const big={home:0,center:1,cowork:1,pangyo:2,gangnam:3,hq:4}[s.office]||0;const night=s.crunch;
   const cols=Math.max(4,Math.min(15,Math.ceil(Math.sqrt(people.length*2.2)))),rows=Math.ceil(people.length/cols);const dw=Math.min(46,(W-120)/cols),dh=Math.min(38,(H-70)/Math.max(1,rows));
   const L=s.last;const custRate=L?Math.min(6,Math.log10(1+L.newU)*1.5):0;const netPos=L?L.net>=0:true;const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   OFF.cust=[];OFF.coins=[];OFF.bub=[];
+  cv.onclick=ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;
+    const i=people.findIndex((p,k)=>{const cx=20+(k%cols)*dw,cy=74+Math.floor(k/cols)*dh;return x>=cx-2&&x<=cx+dw*0.85&&y>=cy+dh*0.5-24&&y<=cy+dh*0.5+6});if(i<0)return;const p=people[i];
+    if(!p.e){OFF.bub.push({i,t:`대표 · 체력 ${Math.round(s.F.energy)}`,life:110});return}
+    const e=p.e;if(e.cheer!==s.month){e.cheer=s.month;e.morale=Math.min(100,e.morale+4);p.mor=e.morale;OFF.bub.push({i,t:`${e.name}: ${pick(['감사합니다 대표님!','힘이 나네요 💪','오늘 야근도 버틸 수 있어요','칭찬 받으니 좋네요 😊','더 열심히 할게요!'])} (+사기)`,life:120});s.flags.cheers=(s.flags.cheers||0)+1;if(s.flags.cheers===30)toast('업적: 칭찬은 고래도 춤추게 한다','good')}
+    else OFF.bub.push({i,t:`${e.name} · 사기 ${Math.round(e.morale)}`,life:100})};
   function frame(ts){const tt=ts/1000;g.clearRect(0,0,W,H);
     // 벽·바닥
     g.fillStyle=night?'#1b2230':C('--sunk');g.fillRect(0,0,W,60);g.fillStyle=night?'#232b3a':C('--bg');g.fillRect(0,60,W,H-60);
@@ -2156,7 +2173,7 @@ function startOffice(){cancelAnimationFrame(OFF.raf);const cv=document.getElemen
   OFF.raf=requestAnimationFrame(frame)}
 
 /* ---- 미니게임 ---- */
-function runMini(m){sheet.classList.add('wide');if(m.kind==='bugs')miniBugs(m);else miniPitch(m)}
+function runMini(m){sheet.classList.add('wide');if(m.kind==='bugs')miniBugs(m);else if(m.kind==='nego')miniNego(m);else if(m.kind==='quiz')miniQuiz(m);else miniPitch(m)}
 function miniDone(m,score){const r=m.done(score);sheet.innerHTML=`<span class="eyebrow">${esc(m.title)}</span><h2>${esc(r.head)}</h2><p>${esc(r.msg)}</p><button class="btn primary" id="mgOk">계속</button>`;
   const b=document.getElementById('mgOk');b.onclick=()=>{sheet.classList.remove('wide');sanitize();nextModal()};b.focus({preventScroll:true})}
 function miniBugs(m){const N=12,T=12000;let hit=0,spawned=0,end=false;
@@ -2176,6 +2193,63 @@ function miniPitch(m){let round=0,hits=0,pos=0,dir=1,end=false,raf=0;const zones
   const press=()=>{if(end)return;const ok=Math.abs(pos-zc)<=zones[round]/2;if(ok)hits++;document.getElementById('pgH').textContent=`성공 ${hits} / 3`;Nd.classList.add(ok?'ok':'no');setTimeout(()=>Nd.classList.remove('ok','no'),300);round++;
     if(round>=3){end=true;cancelAnimationFrame(raf);document.removeEventListener('keydown',kd);setTimeout(()=>miniDone(m,hits),350);return}document.getElementById('pgQ').textContent=qs[round];setZ()};
   const kd=e=>{if(e.code==='Space'){e.preventDefault();press()}};document.addEventListener('keydown',kd);document.getElementById('pgGo').onclick=press}
+
+function negoMini(val,months,who){return {kind:'nego',title:`${who} 구매팀과 단가 협상`,val,who,done:x=>{
+  const top=x.top;if(!x.deal){s.rival.users*=1.02;return {head:'협상 결렬',msg:`${who}가 테이블을 떠났습니다. 상대 최대 예산은 정가의 ${pc(top,0)}였습니다.`}}
+  const amt=val*x.deal/12;s.extra.push({amt,left:months});s.brand+=x.deal>=0.95?4:2;gainXP(Math.round(15+x.deal*20));
+  const gap=top-x.deal;return {head:`계약 성사 · 정가의 ${pc(x.deal,0)}`,msg:`${months/12}년간 월 ${won(amt)}. 상대 최대 예산은 정가의 ${pc(top,0)}였습니다${gap<0.04?' — 거의 완벽한 협상!':gap<0.12?'. 꽤 잘 받아냈습니다.':`. ${pc(gap,0)}p 더 받을 수 있었네요.`}`}}}}
+function miniNego(m){const top=clamp(rnd(0.78,1.02)+s.brand/1000+s.quality/1500,0.75,1.12);let tries=3,end=false;
+  sheet.innerHTML=`<span class="eyebrow">${esc(m.title)}</span><h2>정가 연 ${won(m.val)} · 얼마를 부르시겠습니까?</h2>
+   <p class="note">상대는 정해진 예산이 있습니다. 예산 안이면 바로 사인하고, 넘으면 인내심이 줄어듭니다. 기회는 3번. 너무 낮게 부르면 돈을 테이블에 남깁니다.</p>
+   <div class="ng-face" id="ngF" aria-live="polite">🧑‍💼 "제안 주시죠."</div>
+   <div class="row" style="align-items:center;gap:12px"><input type="range" id="ngR" min="60" max="120" step="1" value="100" style="flex:1" aria-label="제안 가격 (정가 대비 %)"><b class="mono" id="ngV" style="min-width:5.5em;text-align:right">100%</b></div>
+   <div class="row between"><span class="mono" id="ngT">인내심 ●●●</span><span><button class="btn sm" id="ngQ">정가 70%로 마무리</button> <button class="btn primary" id="ngGo">이 가격으로 제안</button></span></div>`;
+  const R_=document.getElementById('ngR'),V=document.getElementById('ngV'),F=document.getElementById('ngF');
+  const upd=()=>{const p=+R_.value/100;V.textContent=`${R_.value}% · ${won(m.val*p)}`};R_.oninput=upd;upd();
+  const fin=deal=>{if(end)return;end=true;setTimeout(()=>miniDone(m,{deal,top}),deal?600:900)};
+  document.getElementById('ngQ').onclick=()=>{F.textContent='🤝 "그 가격이면 바로 하죠."';fin(Math.min(0.7,top))};
+  document.getElementById('ngGo').onclick=()=>{if(end)return;const p=+R_.value/100;
+    if(p<=top){F.innerHTML=`🤝 <b class="good">"좋습니다. 사인하죠."</b>`;fin(p);return}
+    tries--;const d=p/top-1;F.textContent=d<0.06?'😬 "아… 조금만 더 맞춰주시면 바로 진행하겠습니다."':d<0.18?'🤨 "예산을 넘습니다. 다시 생각해 보시죠."':'😤 "농담이시죠?" 담당 임원이 팔짱을 낍니다.';
+    document.getElementById('ngT').textContent='인내심 '+'●'.repeat(tries)+'○'.repeat(3-tries);
+    if(tries<=0){F.textContent='🚪 "이번 건은 없던 걸로 하죠."';fin(0)}}}
+
+const QUIZ=[
+  ['LTV/CAC 비율, 보통 건강하다고 보는 기준은?',['3배 이상','1배 이상','10배 이상']],
+  ['월 번레이트 1억, 현금 12억이면 런웨이는?',['12개월','6개월','24개월']],
+  ['월 이탈률 3%면 1년 뒤 남는 고객은 대략?',['약 70%','약 97%','약 40%']],
+  ['프리머니 40억에 10억 투자를 받으면 투자자 지분은?',['20%','25%','10%']],
+  ['RCPS의 R은 무엇의 약자일까요?',['상환(Redeemable)','등록(Registered)','보상(Reward)']],
+  ['TIPS에 지원하려면 먼저 필요한 것은?',['운영사의 선투자','특허 3건','매출 10억']],
+  ['코스닥 기술특례상장의 핵심 요건은?',['전문평가기관 기술평가','3년 연속 흑자','시가총액 1조']],
+  ['4대보험 사업주 부담은 급여의 대략 몇 %?',['약 10%','약 3%','약 25%']],
+  ['션 엘리스 PMF 테스트: "없어지면 매우 실망" 응답 기준은?',['40% 이상','10% 이상','80% 이상']],
+  ['ARR이 120억이면 MRR은?',['10억','120억','1억']],
+  ['CAC 200만원, 월 ARPU 10만원, 매출총이익률 80%면 회수 기간은?',['25개월','20개월','10개월']],
+  ['베스팅 "1년 클리프"의 뜻은?',['1년 전에 나가면 지분 0','매년 지분 전부 지급','1년 뒤 일시 지급 후 종료']],
+  ['스톡옵션 행사가격은 보통 언제 정해질까요?',['부여할 때','행사할 때','상장할 때']],
+  ['1배 비참여 청산우선권 투자자는 매각 시 무엇을 받나요?',['투자금과 지분 몫 중 큰 쪽','둘 다 받는다','지분 몫만 받는다']],
+  ['시리즈 A의 주된 목적은?',['검증된 모델의 확장','아이디어 검증','상장 직전 자금']],
+  ['법인 부가세 신고(예정 포함)는 1년에 몇 번?',['4번','1번','12번']],
+  ['매출 100억, 영업이익 5억이면 영업이익률은?',['5%','20%','0.5%']],
+  ['"번 멀티플" 1.0의 의미는?',['순증 ARR 1원당 1원 소진','매출의 1배 손실','월 매출 1억']],
+];
+function miniQuiz(m){const qs=QUIZ.slice().sort(()=>R()-0.5).slice(0,5);let i=0,ok=0,end=false,tm=0,t0=0;const T=9000;
+  sheet.innerHTML=`<span class="eyebrow">${esc(m.title)}</span><h2 id="qzQ"></h2><div class="qzbar"><i id="qzB"></i></div><div class="choices" id="qzC"></div><div class="row between"><span class="mono" id="qzS">정답 0 / 5</span><span class="note mono" id="qzN">1 / 5</span></div>`;
+  const show=()=>{const [q,a]=qs[i];const opts=a.map((t,k)=>({t,k})).sort(()=>R()-0.5);document.getElementById('qzQ').textContent=`심사위원: "${q}"`;document.getElementById('qzN').textContent=`${i+1} / 5`;
+    document.getElementById('qzC').innerHTML=opts.map(o=>`<button class="choice" data-k="${o.k}"><b>${esc(o.t)}</b></button>`).join('');
+    document.querySelectorAll('#qzC button').forEach(b=>b.onclick=()=>answer(+b.dataset.k,b));t0=performance.now();clearInterval(tm);
+    tm=setInterval(()=>{const left=Math.max(0,1-(performance.now()-t0)/T);const B=document.getElementById('qzB');if(B)B.style.width=(left*100)+'%';if(left<=0)answer(-1,null)},60);
+    const f=document.querySelector('#qzC button');if(f)f.focus({preventScroll:true})};
+  const answer=(k,btn)=>{if(end)return;clearInterval(tm);const right=k===0;if(right)ok++;document.getElementById('qzS').textContent=`정답 ${ok} / 5`;
+    document.querySelectorAll('#qzC button').forEach(b=>{b.disabled=true;if(b.dataset.k==='0')b.classList.add('qz-ok');else if(b===btn)b.classList.add('qz-no')});
+    if(k<0)document.getElementById('qzQ').textContent='⏰ 시간 초과! 객석이 술렁입니다.';
+    i++;setTimeout(()=>{if(i>=5){end=true;miniDone(m,ok)}else show()},900)};
+  show()}
+function demoMini(){return {kind:'quiz',title:'데모데이 Q&A',done:c=>{
+  if(c>=4){s.brand+=5;gainXP(30);if(s.fund)s.fund.prog=(s.fund.prog||0)+15;else s.flags.boost=(s.flags.boost||0)+Math.max(5,s.users*0.05);s.trust+=3;return {head:`${c}/5 정답 · 데모데이 최우수상`,msg:`심사위원 만장일치. VC 명함이 쏟아졌습니다${s.fund?' (IR 진행률 +15%)':''}. 언론 노출로 유입도 늘어납니다.`}}
+  if(c>=2){s.brand+=2;gainXP(12);return {head:`${c}/5 정답 · 무난한 발표`,msg:'몇몇 VC가 관심을 보였습니다.'}}
+  s.brand-=1;s.F.energy-=3;return {head:`${c}/5 정답…`,msg:'숫자를 모르는 대표로 소문이 났습니다. 공부합시다.'}}}}
 
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
