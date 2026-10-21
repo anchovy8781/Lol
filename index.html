@@ -221,6 +221,12 @@ td.r,th.r{text-align:right}
 .why{display:flex;flex-direction:column;gap:3px;font-size:13px}
 .why span.p{color:var(--good)}.why span.m{color:var(--bad)}
 .cardres{border-left:4px solid var(--accent);padding:8px 12px;background:color-mix(in srgb,var(--accent-soft) 40%,var(--surface));border-radius:0 var(--r) var(--r) 0}
+.card.r-희귀{border-color:color-mix(in srgb,var(--info) 60%,var(--line))}
+.card.r-전설{border-color:var(--warn);background:linear-gradient(135deg,color-mix(in srgb,var(--warn) 14%,var(--surface)),var(--surface))}
+.card .rar{font-size:11px;font-weight:700;color:var(--warn)}
+.t-기회{background:color-mix(in srgb,var(--info) 25%,transparent)}.t-전설{background:var(--warn);color:#fff}
+.cast{display:flex;flex-direction:column;gap:3px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.combo{font-size:12.5px;padding:6px 10px;border-radius:var(--r);background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px dashed var(--warn)}
 .board td{font-size:13px}
 .linkish{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}.linkish:hover{text-decoration:underline}.board tr.sel td{background:var(--sunk)}
 .post{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
@@ -380,7 +386,7 @@ function migrate(o){if(!o)return o;
   o.ch=o.ch||{search:(o.ad||0)*0.5,social:(o.ad||0)*0.5,video:0,content:o.brandAd||0,offline:0};o.seo=o.seo||0;o.fx=o.fx||{};
   o.road=o.road||{cur:null,prog:0,share:0.3,done:[]};o.coh=o.coh||[];o.certs=o.certs||{venture:'none',lab:'none',isms:'none'};o.certLeft2=o.certLeft2||{};
   o.rnd=o.rnd||{};o.taxCredit=o.taxCredit||0;o.rate=o.rate??2.75;o.usd=o.usd??1380;o.annual=o.annual||0;o.deferred=o.deferred||0;
-  o.flags=o.flags||{};o.mode=o.mode||'expert';if(o.rival&&!o.rival.ceo)o.rival.ceo=pick(SUR)+pick(GIV);o.chap=o.chap||{i:0,start:o.month||0,fails:0};o.timeline=o.timeline||[];o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
+  o.flags=o.flags||{};o.mode=o.mode||'expert';if(o.rival&&!o.rival.ceo)o.rival.ceo=pick(SUR)+pick(GIV);o.chap=o.chap||{i:0,start:o.month||0,fails:0};if(!o.cast){const _s=s;s=o;initCast();s=_s}o.timeline=o.timeline||[];o.esg=o.esg||{inv:{},grade:null,reportY:null,pen:0};if(o.users>0&&o.flags.launched==null)o.flags.launched=1;
   for(const e of o.team||[]){if(!e.trait)e.trait='none';e.mil=e.mil||0;e.leave=e.leave||0}return o}
 function load(){try{const t=localStorage.getItem(KEY);return t?migrate(JSON.parse(t)):null}catch(e){return null}}
 function clearSave(){try{localStorage.removeItem(KEY)}catch(e){}}
@@ -401,7 +407,7 @@ function newGame(c){
     retire:0,loss:0,yp:{},vat:{out:0,in:0},climate:1,ctrend:0,
     hist:[],log:[],pending:[],last:null,deposit:0,flags:{},pivots:0,erVisits:0,ipo:null,extra:[],ended:null,nextId:1,cofVest:0};
   if(c.ind==='mfg')s.mfg={lines:0,building:[],site:'none',workers:0,wage:3.7e7,wMorale:65,inv:0,recv:[0,0],plan:1,oem:true,mat:1,cert:{iatf:'none',ce:'none'},certLeft:{},yield:0.8,smart:false,fill:1,siteVal:0};
-  s.timeline=[];s.rival.ceo=pickName();s.chap={i:0,start:0,fails:0};migrate(s);if(s.mode==='simple')drawHand();if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
+  s.timeline=[];s.rival.ceo=pickName();initCast();s.chap={i:0,start:0,fails:0};migrate(s);if(s.mode==='simple')drawHand();if(!cy)s.wealth={dev:2e7,consult:4e7,student:3e6,serial:5e8}[c.bg]||0;
   if(cy)addLog(`${cy.gen+1}번째 창업. 이전 엑싯 자금 중 ${won(b.cap)}를 새 회사에 투자합니다.`);
   if(c.cof!=='none'){const C=COF[c.cof];
     s.team.push({id:s.nextId++,name:pickName(),role:C.role,lv:3,skill:C.skill,salary:C.salary||0,morale:80,ten:0,ramp:1,opt:0,cof:true});
@@ -444,6 +450,7 @@ function allocTotal(){return Object.values(s.alloc).reduce((a,b)=>a+b,0)}
 function priceRatio(){return s.price/ind().base}
 function revenueHist(n){return s.hist.slice(-n).map(h=>h.rev)}
 function growth(w=3){if(!s)return 0;const h=s.hist;if(h.length<2)return 0;const k=Math.min(w,h.length-1);const a=h[h.length-1-k].rev,b=h[h.length-1].rev;if(a<=0)return b>0?0.3:0;return Math.pow(b/a,1/k)-1}
+function coreRev(){const L=s&&s.last;if(!L)return 0;return Math.max(0,L.rev-(L.lines.extraRev||0))}
 function lastRev(){return s.last?s.last.rev:0}
 function burn(){return s.last?Math.max(0,-s.last.net):0}
 function runway(){const b=burn();return b<=0?Infinity:s.cash/b}
@@ -614,6 +621,7 @@ function simulate(){
   }
   if(s.flags.sale&&s.ind!=='commerce')delete s.flags.sale;
   let extraRev=0;s.extra=s.extra.filter(x=>{extraRev+=x.amt;return --x.left>0});
+  extraRev=Math.min(extraRev,Math.max(5e7,rev*0.6));
   const subR=subsTick();extraRev+=subR.rev;s.subRev=subR.rev;
   rev+=extraRev;
   {const osh=1-ind().tam*fxv('tam')/tam();if(osh>0)rev*=1+osh*(s.usd/1380-1)}
@@ -688,6 +696,7 @@ function simulate(){
   let dE=27+(F.er||0)-4.9*8/maxBlocks()*work+9*A.rest-(rw<3?6:0)-(s.crunch?3:0)-(orgSize()>adminCap()?3:0)-(s.F.salary<2e6&&m>12?2:0)-(s.flags.personalDebt?2:0);
   if(s.flags.forcedRest){dE+=30;s.flags.forcedRest=0}
   if(s.flags.leave>0){dE+=25;s.flags.leave--}
+  castTick();if(s.cast)dE+=clamp(s.cast.family.rel/25,-2,2);
   s.wealth+=F.salary*0.82-2.5e6;if(s.flags.apt)dE+=2;
   if(s.flags.angelBet&&s.month>=s.flags.angelBet.at){const x=pick([0,0,0,0.5,1,2,5,20]);s.wealth+=s.flags.angelBet.amt*x;note(x>=5?`후배 회사가 대박났습니다! 엔젤 투자금 ${x}배 회수 (${won(s.flags.angelBet.amt*x)}).`:x===0?'엔젤 투자했던 후배 회사가 폐업했습니다.':`엔젤 투자 회수: ${x}배.`,x>=2?'good':x===0?'bad':'');delete s.flags.angelBet}if(s.wealth<0){dE-=3;if(!s.flags.broke){s.flags.broke=1;note('대표 개인 통장 잔고 마이너스. 생활비를 마이너스통장으로 버팁니다 (체력 매월 -3).','bad')}}else s.flags.broke=0;
   F.energy=clamp(F.energy+dE,0,100);
@@ -732,6 +741,9 @@ function simulate(){
   s.pending=[];
   if(s.flags.yearShow){s.pending.push({live:'yearEnd',d:s.flags.yearShow});delete s.flags.yearShow}
   for(const k of ['launchDay','ipoShow','earnShow','launchShow'])if(s.flags[k]){s.pending.push({live:k,d:s.flags[k]});delete s.flags[k]}
+  if(calM(s.month)===1&&s.month>=12){ygoalJudge(note);s.pending.push(EV_NEWYEAR())}
+  if(s.flags.comboShow){s.pending.push({live:'celebrate',d:s.flags.comboShow});delete s.flags.comboShow}
+  if(s.fund&&s.fund.offers&&!s.fund.termShown){s.fund.termShown=1;s.pending.push(EV_TERM())}
   for(const c of (s.flags.chapClear||[]))s.pending.push({live:'celebrate',d:{t:c.t,s:c.s}});s.flags.chapClear=[];
   if(s.mode==='simple')drawHand();
   for(const l of (s.flags.lvUp||[]))s.pending.push(EV_LEVEL(l));s.flags.lvUp=[];
@@ -784,7 +796,7 @@ function fundTick(A,note){
     for(let k=0;k<n;k++){let vc;do{vc=pick(VCS)}while(used.has(vc));used.add(vc);
       const pre=fairVal()*rnd(0.78,1.08)*(n>1?1.06:1)*(f.vm||1);const d=rnd(r.dil[0],r.dil[1]);const amt=clamp(pre*d/(1-d),r.amt[0],r.amt[1]);
       f.offers.push({vc,pre,amt,dil:amt/(pre+amt),tips:f.i<=1&&R()<0.55});}
-    note(`${r.name}: 텀시트 ${n}건 도착!`,'good');
+    f.termShown=0;f.nego=0;note(`${r.name}: 텀시트 ${n}건 도착!`,'good');
   }else if(f.months>=7){note(`${r.name} 라운드 7개월째 리드 투자자 확보 실패. 라운드 종료.`,'bad');s.fund=null;s.brand-=2}
 }
 function closeRound(f,note){
@@ -977,6 +989,12 @@ const ACH=[
   {k:'haltok',n:'기사회생',d:'거래정지 후 거래 재개',f:()=>!!s.flags.haltSurvived},
   {k:'relist',n:'다시 상장',d:'상장폐지 후 재상장',f:()=>s.delisted&&!!s.pub},
   {k:'audit10',n:'깨끗한 장부',d:'외부감사 적정의견 10년 연속',f:()=>s.audit&&s.audit.hist&&s.audit.hist.length>=10&&s.audit.hist.slice(-10).every(h=>h.op==='적정')},
+  {k:'combo1',n:'콤보!',d:'첫 카드 콤보 발동',f:()=>s.combos&&Object.keys(s.combos).length>=1},
+  {k:'combo3',n:'콤보 마스터',d:'서로 다른 콤보 3종 발동',f:()=>s.combos&&Object.keys(s.combos).length>=3},
+  {k:'legend',n:'전설의 순간',d:'전설 카드 사용',f:()=>(s.flags.legendUsed||0)>=1},
+  {k:'family',n:'가정의 평화',d:'가족 관계 80 이상',f:()=>s.cast&&s.cast.family.rel>=80},
+  {k:'mentor',n:'좋은 스승',d:'멘토 관계 80 이상',f:()=>s.cast&&s.cast.mentor.rel>=80},
+  {k:'nego',n:'협상의 달인',d:'역제안으로 밸류 상향 성공',f:()=>s.fund&&s.fund.nego>0&&s.fund.offers||(s.flags.negoWin||0)>0},
   {k:'board',n:'이사회의 신임',d:'이사회 신뢰도 90 이상',f:()=>s.trust>=90},
 ];
 function checkAch(note){for(const a of ACH){if(!s.ach[a.k]&&a.f()){s.ach[a.k]=s.month;gainXP(40);note(`업적 달성: ${a.n} — ${a.d}`,'good');s.brand+=1;if(CELE[a.k])(s.flags.cele=s.flags.cele||[]).push(a.k)}}}
@@ -1171,7 +1189,7 @@ const EVENTS=[
   {w:()=>s.pub&&!s.pub.halt&&!(s.flags.embAt>s.month-60)?(esgBase().g<40?0.006:0.002):0,mk:()=>{s.flags.embAt=s.month;const amt=Math.max(5e8,s.cash*rnd(0.02,0.08));return {eb:'횡령·배임',title:`자금팀장이 회사 자금 ${won(amt)}을 횡령한 사실이 드러났습니다`,body:'자기자본의 5%가 넘으면 공시 의무가 있고, 한국거래소는 상장적격성 심사를 위해 거래를 정지합니다.',choices:[
     {t:'즉시 공시하고 고소',d:'거래정지 후 상장적격성 심사, 내부통제 개선 시 재개',f:()=>{s.cash-=amt;startHalt('임직원 횡령 공시',6,true);if(s.esg)s.esg.inv.ethics=s.esg.inv.ethics??s.month;return '즉시 공시했습니다. 내부통제를 전면 개편합니다.'}},
     {t:'조용히 회수를 시도하고 공시를 미룬다',d:'발각 시 상장폐지 위험',f:()=>{s.cash-=amt*0.5;if(R()<0.6){s.flags.embezzle=1;if(s.esg)s.esg.pen=(s.esg.pen||0)+8;startHalt('횡령 은폐 의혹, 공시 지연',12,true);return '언론 보도로 은폐 사실이 드러났습니다. 거래정지.'}return '절반을 회수하고 조용히 넘어갔습니다... 이번에는.'}}]}}},
-  {w:()=>(s.ind==='saas'||s.ind==='mfg')&&s.quality>60&&s.users>15&&!(s.flags.dealAt>s.month-10)?0.07:0,mk:()=>{s.flags.dealAt=s.month;const buyer=pick(['국내 5대 그룹 계열사','글로벌 완성차 1차 벤더','대형 금융지주','공기업']);const val=Math.max(1e8,lastRev()*rnd(1.5,4));return {eb:'대형 계약 협상',title:`${buyer}와 연 ${won(val)} 규모 계약 막판 협상`,body:'구매팀이 가격 인하를 요구합니다. 경쟁사도 최종 후보에 올라 있습니다. 어떤 카드를 내밀까요?',choices:[
+  {w:()=>(s.ind==='saas'||s.ind==='mfg')&&s.quality>60&&s.users>15&&!(s.flags.dealAt>s.month-10)?0.07:0,mk:()=>{s.flags.dealAt=s.month;const buyer=pick(['국내 5대 그룹 계열사','글로벌 완성차 1차 벤더','대형 금융지주','공기업']);const val=Math.max(1e8,coreRev()*rnd(1.5,4));return {eb:'대형 계약 협상',title:`${buyer}와 연 ${won(val)} 규모 계약 막판 협상`,body:'구매팀이 가격 인하를 요구합니다. 경쟁사도 최종 후보에 올라 있습니다. 어떤 카드를 내밀까요?',choices:[
     {t:'정가 고수 — 가치를 믿는다',d:'성사 확률 약 35%, 성사 시 마진 최고',f:()=>{if(R()<0.35+s.brand/400){s.extra.push({amt:val/12,left:24});s.brand+=4;gainXP(30);return `정가로 계약 성사! 2년간 월 ${won(val/12)}.`}s.rival.users*=1.02;return `${s.rival.name}에 계약을 뺏겼습니다.`}},
     {t:'15% 할인 + 전담 매니저 배정',d:'성사 확률 약 70%',f:()=>{if(R()<0.7){s.extra.push({amt:val*0.85/12,left:24});s.brand+=2;gainXP(20);return `계약 성사. 월 ${won(val*0.85/12)}.`}return '막판에 경쟁사가 더 낮은 가격을 불렀습니다.'}},
     {t:'30% 할인으로 무조건 따낸다',d:'성사 확률 약 95%, 레퍼런스 확보, 마진 낮음',f:()=>{if(R()<0.95){s.extra.push({amt:val*0.7/12,left:24});s.brand+=5;return `레퍼런스 고객 확보. 월 ${won(val*0.7/12)}. 다른 고객들도 할인을 요구할지 모릅니다.`}return '그래도 실패했습니다.'}}]}}},
@@ -1179,6 +1197,8 @@ const EVENTS=[
   {w:()=>s.rival.users<s.users*0.3&&s.month>24?0.03:0,mk:()=>{const old=s.rival.name;return {eb:'경쟁사',title:`${old}가 경영난으로 서비스 종료를 발표했습니다`,body:`남은 고객 ${num(s.rival.users)}${ind().unitS}이 갈 곳을 찾고 있습니다.`,choices:[
     {t:'이관 프로모션으로 고객 흡수',d:`비용 ${won(sc(2e7))}`,f:()=>{s.cash-=sc(2e7);s.users+=s.rival.users*0.45;s.rival={name:pick(RIVALS.filter(n=>n!==old)),users:tam()*0.002,g:rnd(0.015,0.04)};gainXP(25);return `고객 상당수를 흡수했습니다. 그사이 새 경쟁자 ${s.rival.name}가 등장했습니다.`}},
     {t:'자연 유입만 기다린다',d:'',f:()=>{s.users+=s.rival.users*0.15;s.rival={name:pick(RIVALS.filter(n=>n!==old)),users:tam()*0.002,g:rnd(0.015,0.04)};return `일부 고객이 들어왔습니다. 새 경쟁자 ${s.rival.name}가 등장했습니다.`}}]}}},
+  {w:()=>s.cast?0.08+(s.cast.family.rel<-40?0.4:0):0,mk:()=>EV_FAMILY()},
+  {w:()=>s.cast?0.07:0,mk:()=>EV_MENTOR()},
   {w:()=>s.markets.cn&&!s.flags.cnReg?0.08:0,mk:()=>({eb:'해외',title:'중국 당국이 외국 기업 데이터 규제를 강화했습니다',body:'현지 데이터센터 이전과 보안 심사가 의무화됐습니다.',choices:[
     {t:'현지화 투자',d:'5억원',f:()=>{s.flags.cnReg=1;s.cash-=5e8;return '심사를 통과했습니다.'}},
     {t:'중국 사업 철수',d:'진출 비용 손실',f:()=>{s.flags.cnReg=1;delete s.markets.cn;return '중국 법인을 청산했습니다.'}}]})},
@@ -1553,7 +1573,7 @@ function apStart(){if(AP.on||!s||s.ended)return;AP.on=true;AP.months=0;AP.startC
 function apStop(msg){AP.on=false;clearTimeout(AP.timer);AP.msg=msg||'';if(s&&!s.ended)save();render()}
 function apTick(){
   if(!AP.on)return;if(!s||s.ended){apStop();render();return}
-  aiManage();if(simple()&&s.hand&&s.hand.length){s.pick=s.hand[0];playCard()}const res=simulate();sanitize();AP.months++;
+  aiManage();if(simple()&&s.hand&&s.hand.length){s.pick=s.opp&&cardOf(s.opp).r==='전설'?s.opp:s.hand[0];playCard()}const res=simulate();sanitize();AP.months++;
   const notes=res.notes;let pauseAt=-1;
   for(let i=0;i<s.pending.length;i++){const ev=s.pending[i];if(AP.stop&&isBig(ev)){pauseAt=i;break}
     if(ev.live)continue;const c=ev.choices[Math.min(aiChoose(ev),ev.choices.length-1)];const msg=c.f();sanitize();addLog(`[AI] ${ev.title} → ${c.t}${msg?': '+msg:''}`,s.month-1);if(s.ended)break;
@@ -1727,7 +1747,7 @@ const INBOX={
   intern:{w:()=>s.team.length>=3,from:()=>`${pick(['한빛대','새솔대','가람대','누리대'])} 산학협력단`,subj:'현장실습 인턴십 협약 제안',body:'3~4학년 학생 2명을 6개월간 인턴으로 보내드리고 싶습니다. 인건비 일부를 정부가 지원합니다.',
     o:[{t:'협약 체결',f:()=>{s.brand+=1;for(let i=0;i<2;i++)s.cands.push({id:s.nextId++,name:pickName(),role:pick(['dev','design','mkt']),lv:0,skill:ri(35,55),ask:2.8e7,wantOpt:false,trait:pick(TRAITS).k,mil:0});return '이번 달 후보자에 인턴 출신 지원자가 추가됐습니다.'}},{t:'여력이 없다',f:()=>'다음 학기에 다시 연락하기로 했습니다.'}],dflt:1},
   vip:{w:()=>s.users>20,from:()=>'최대 고객 담당자',subj:'저희만을 위한 기능을 추가해 주실 수 있나요?',body:'이 기능만 있으면 전사 도입을 검토하겠습니다. 다른 고객에게는 필요 없을 수도 있습니다.',
-    o:[{t:'맞춤 개발 (기술부채 +6)',f:()=>{s.debt+=6;s.extra.push({amt:Math.max(3e6,lastRev()*0.03),left:12});return '전사 도입 계약을 따냈습니다. 코드는 좀 지저분해졌습니다.'}},{t:'로드맵에 없다고 거절',f:()=>{if(R()<0.3){s.users=Math.max(0,s.users*0.99);return '고객이 실망했습니다.'}return '고객이 이해해 줬습니다.'}}],dflt:1},
+    o:[{t:'맞춤 개발 (기술부채 +6)',f:()=>{s.debt+=6;s.extra.push({amt:Math.max(3e6,coreRev()*0.03),left:12});return '전사 도입 계약을 따냈습니다. 코드는 좀 지저분해졌습니다.'}},{t:'로드맵에 없다고 거절',f:()=>{if(R()<0.3){s.users=Math.max(0,s.users*0.99);return '고객이 실망했습니다.'}return '고객이 이해해 줬습니다.'}}],dflt:1},
   bounty:{w:()=>s.users>1000,from:()=>'화이트해커 (보안 연구자)',subj:'[보안] 귀사 API에서 취약점을 발견했습니다',body:'인증 없이 다른 사용자 정보를 조회할 수 있는 취약점입니다. 버그바운티 보상을 기대합니다.',
     o:[{t:()=>`보상금 지급하고 즉시 패치 (${won(sc(5e6))})`,f:()=>{s.cash-=sc(5e6);s.debt=Math.max(0,s.debt-3);return '취약점을 막았습니다. 연구자가 SNS에 감사 글을 올렸습니다.'}},{t:'무시한다',f:()=>{if(R()<0.35){s.flags.outage=1;s.brand-=8;return '연구자가 취약점을 공개해버렸습니다. 언론 보도까지 났습니다.'}return '조용히 패치했습니다.'}}],dflt:1},
   rnd:{w:()=>s.quality>40,from:()=>'정부출연연구원 책임연구원',subj:'공동 R&D 과제 참여 제안',body:'2년간 정부 R&D 과제를 함께 하자는 제안입니다. 과제비가 나오지만 보고서와 정산 업무가 상당합니다.',
@@ -1739,7 +1759,7 @@ const INBOX={
   lease:{w:()=>s.office!=='home'&&s.office!=='center',from:()=>'건물 관리인',subj:'3년 장기계약 시 임대료 8% 할인',body:'지금 계약을 3년으로 연장하시면 임대료를 깎아드리겠습니다. 중도 해지 시 위약금이 있습니다.',
     o:[{t:'3년 연장',f:()=>{s.rentMul=(s.rentMul||1)*0.92;return '임대료가 8% 내려갔습니다.'}},{t:'유연성이 중요하다',f:()=>'현재 조건을 유지합니다.'}],dflt:1},
   public:{w:()=>(s.ind==='saas'||s.ind==='mfg')&&s.quality>55&&!s.flags.g2b,from:()=>'조달청 담당 주무관',subj:'나라장터 혁신제품 지정 신청 안내',body:'혁신제품으로 지정되면 공공기관이 수의계약으로 구매할 수 있습니다. 서류 준비가 꽤 많습니다.',
-    o:[{t:'신청 (대표 체력 -4)',f:()=>{s.flags.g2b=1;s.F.energy-=4;if(R()<0.6){s.extra.push({amt:Math.max(5e6,lastRev()*0.06),left:24});s.brand+=3;return '혁신제품으로 지정되어 공공 매출이 생겼습니다.'}return '심사에서 떨어졌습니다.'}},{t:'민간 시장에 집중',f:()=>{s.flags.g2b=1;return '다음에 검토합니다.'}}],dflt:1},
+    o:[{t:'신청 (대표 체력 -4)',f:()=>{s.flags.g2b=1;s.F.energy-=4;if(R()<0.6){s.extra.push({amt:Math.max(5e6,coreRev()*0.06),left:24});s.brand+=3;return '혁신제품으로 지정되어 공공 매출이 생겼습니다.'}return '심사에서 떨어졌습니다.'}},{t:'민간 시장에 집중',f:()=>{s.flags.g2b=1;return '다음에 검토합니다.'}}],dflt:1},
 };
 function inboxTick(){s.inbox=s.inbox||[];
   for(const it of s.inbox.filter(x=>x.exp<=s.month)){const T=INBOX[it.k];const msg=T.o[T.dflt].f();addLog(`[메일 미응답] ${it.subj} → ${msg}`)}
@@ -1897,7 +1917,7 @@ const CARDS=[
   {k:'cut',n:'비용 절감 비상경영',tag:'자금',w:()=>runway()<8?5:0.3,cost:()=>0,
     fx:()=>`광고비 절반, 대표 급여 반납, 팀 사기 -8 → 월 지출 약 -${won(chSum()*0.5+s.F.salary)}`,go:()=>{for(const k in s.ch)s.ch[k]*=0.5;s.F.salary=0;s.team.forEach(e=>e.morale-=8);addBuff('frugal',1,6,'비상경영')}},
   {k:'grant',n:'정부지원사업 총력전',tag:'자금',w:()=>isSME()&&s.month<84?2:0,cost:()=>0,
-    fx:()=>`대표 체력 -10 · 2~3개월 뒤 지원금 ${won(rnd(5e7,2e8))} 내외 (선정률 높음)`,go:()=>{s.F.energy-=10;const amt=Math.round(rnd(5e7,2e8)/1e6)*1e6;if(R()<0.7+D().grant)s.grants.push({at:s.month+ri(2,3),amt,left:1});else addLog('지원사업 총력전: 아쉽게 탈락했습니다.')}},
+    fx:()=>`대표 체력 -10 · 2~3개월 뒤 지원금 ${won(5e7+((s.month*7919)%150)*1e6)} (선정률 높음)`,go:()=>{s.F.energy-=10;const amt=5e7+((s.month*7919)%150)*1e6;if(R()<0.7+D().grant)s.grants.push({at:s.month+ri(2,3),amt,left:1});else addLog('지원사업 총력전: 아쉽게 탈락했습니다.')}},
   {k:'viral',n:'바이럴 챌린지 이벤트',tag:'도박',w:()=>s.flags.launched&&(s.ind!=='mfg')?2:0,cost:()=>sc(1.5e7),
     fx:c=>`${won(c)} · 40% 확률로 대박(신규 대폭↑), 60%는 조용히 묻힘`,go:c=>{s.cash-=c;if(R()<0.4){s.flags.boost=(s.flags.boost||0)+s.users*0.4+tam()*0.003;s.brand+=8;s.flags.cardMsg='챌린지 영상이 터졌습니다!'}else s.flags.cardMsg='반응이 미지근했습니다.'}},
   {k:'snipe',n:'경쟁사 고객 빼앗기',tag:'도박',w:()=>s.rival.users>s.users*0.3&&s.flags.launched?2:0,cost:()=>sc(2e7),
@@ -1913,7 +1933,7 @@ const CARDS=[
   {k:'pr',n:'언론 PR 투어',tag:'성장',w:()=>s.month>2?1.5:0,cost:()=>sc(8e6),
     fx:c=>`${won(c)} · 브랜드 인지도 +8 · 대표 체력 -5`,go:c=>{s.cash-=c;s.brand+=8;s.F.energy-=5}},
   {k:'partner',n:'대기업 제휴 협상',tag:'도박',w:()=>s.quality>50&&s.flags.launched?1.5:0,cost:()=>0,
-    fx:()=>`대표 체력 -8 · 60% 확률로 1년간 월 매출 +${won(Math.max(5e6,lastRev()*0.12))}`,go:()=>{s.F.energy-=8;if(R()<0.6){s.extra.push({amt:Math.max(5e6,lastRev()*0.12),left:12});s.flags.cardMsg='제휴 계약 성사!'}else s.flags.cardMsg='협상이 결렬됐습니다.'}},
+    fx:()=>`대표 체력 -8 · 60% 확률로 1년간 월 매출 +${won(Math.max(5e6,coreRev()*0.12))}`,go:()=>{s.F.energy-=8;if(R()<0.6){s.extra.push({amt:Math.max(5e6,coreRev()*0.12),left:12});s.flags.cardMsg='제휴 계약 성사!'}else s.flags.cardMsg='협상이 결렬됐습니다.'}},
   {k:'trial',n:'무료 체험 30일 확대',tag:'성장',w:()=>s.flags.launched&&s.ind!=='mfg'&&!(s.buffs||[]).some(b=>b.k==='acq')?2:0,cost:()=>sc(5e6),
     fx:c=>`${won(c)} · 3개월간 신규 유입 ×1.5 · 단기 매출 소폭 감소`,go:c=>{s.cash-=c;addBuff('acq',1.5,3,'무료 체험 확대');s.fx.arpu=(s.fx.arpu||1)*0.99}},
   {k:'cs',n:'고객 성공팀 집중 투입',tag:'수익',w:()=>!(s.buffs||[]).some(b=>b.k==='churn')&&s.users>30&&s.last&&s.last.churnR>0.04?3:0,cost:()=>sc(1e7),
@@ -1929,19 +1949,21 @@ const CARDS=[
 function drawHand(){const pool=CARDS.filter(c=>{try{return c.w()>0}catch(e){return false}});const hand=[];
   while(hand.length<3&&pool.length){const tot=pool.reduce((a,c)=>a+c.w(),0);let x=R()*tot,i=0;for(;i<pool.length-1;i++){x-=pool[i].w();if(x<=0)break}hand.push(pool.splice(i,1)[0].k)}
   if(hand.includes('star'))s.flags.starRole=pick(['dev','sales','pm','mkt','data']);
-  s.hand=hand;s.pick=null}
-function cardOf(k){return CARDS.find(c=>c.k===k)}
+  s.hand=hand;s.pick=null;s.opp=null;
+  if(R()<(s.flags.legendBoost?0.9:0.3)){const op=OPPS.filter(c=>{try{return c.w()>0&&!(c.r==='전설'&&(s.legendSeen||{})[c.k])}catch(e){return false}}).map(c=>({c,w:c.w()*(s.flags.legendBoost&&c.r==='전설'?6:1)}));const tot=op.reduce((a,x)=>a+x.w,0);if(tot>0){let x=R()*tot;for(const o of op){x-=o.w;if(x<=0){s.opp=o.c.k;break}}}delete s.flags.legendBoost}}
+function cardOf(k){return CARDS.find(c=>c.k===k)||OPPS.find(c=>c.k===k)}
 function playCard(){if(!s.pick)return null;const c=cardOf(s.pick);if(!c)return null;let cost=0;try{cost=c.cost()}catch(e){}if(cost>s.cash&&cost>0){toast('현금이 부족합니다.','bad');return null}
-  const before={users:s.users,cash:s.cash};delete s.flags.cardMsg;c.go(cost);sanitize();gainXP(5);s.lastCard={k:c.k,n:c.n,m:s.month,before,msg:s.flags.cardMsg||''};addLog(`전략 카드: ${c.n}${s.flags.cardMsg?' — '+s.flags.cardMsg:''}`);
+  const before={users:s.users,cash:s.cash};delete s.flags.cardMsg;c.go(cost);if(s.pick===s.opp){s.opp=null;if(c.r==='전설'){s.flags.legendUsed=(s.flags.legendUsed||0)+1;(s.legendSeen=s.legendSeen||{})[c.k]=1}}s.cardHist=(s.cardHist||[]).concat([c.k]).slice(-5);checkCombo();sanitize();gainXP(5);s.lastCard={k:c.k,n:c.n,m:s.month,before,msg:s.flags.cardMsg||''};addLog(`전략 카드: ${c.n}${s.flags.cardMsg?' — '+s.flags.cardMsg:''}`);
   return c}
 function kpisSimple(){const L=s.last,rw=runway(),g=growth();const k=(l,v,sub,cls='')=>`<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${sub||'&nbsp;'}</div></div>`;
   return `<section class="kpis" aria-label="핵심 지표">${k('현금',won(s.cash),!L?'':rw===Infinity?'흑자 경영':`${trim(rw,1)}개월 버팀`,rw<4?'alert':'')}${k('월 매출',L?won(L.rev):'0원',L?`<span class="${g>=0?'good':'bad'}">${sgn(g)}${pc(g)} / 월</span>`:'')}${k(ind().unit,num(s.users),L?`<span class="good">+${num(L.newU)}</span> <span class="bad">-${num(L.churned)}</span>`:'')}${k(s.pub?'시가총액':'기업가치',won(compVal()),`대표 지분 ${pc(myPct())}`)}${k('대표 체력',Math.round(s.F.energy),`Lv.${lvOf(s.F.xp)} ${titleOf(lvOf(s.F.xp))}`,s.F.energy<30?'alert':'')}</section>`}
 function decision(){if(!s.hand)drawHand();
   return `<section class="panel decide"><div class="row between"><h2>이번 달 결정 · ${calY(s.month)}년 ${calM(s.month)}월</h2><span class="note">카드 1장을 고르고 다음 달로</span></div>
-   <div class="cards3">${s.hand.map(k=>{const c=cardOf(k);if(!c)return '';let cost=0,fx='';try{cost=c.cost();fx=c.fx(cost)}catch(e){}const sel=s.pick===k,poor=cost>s.cash&&cost>0;
-     return `<button class="card ${sel?'sel':''}" data-card="${k}" ${poor||AP.on?'disabled':''}><span class="ctag t-${c.tag}">${c.tag}</span><b>${c.n}</b><span class="cfx">${esc(fx)}</span>${cost?`<span class="mono note">비용 ${won(cost)}</span>`:'<span class="mono note">비용 없음</span>'}</button>`}).join('')}</div>
+   <div class="cards3">${s.hand.concat(s.opp?[s.opp]:[]).map(k=>{const c=cardOf(k);if(!c)return '';let cost=0,fx='';try{cost=c.cost();fx=c.fx(cost)}catch(e){}const sel=s.pick===k,poor=cost>s.cash&&cost>0;
+     return `<button class="card ${sel?'sel':''} r-${c.r||'일반'}" data-card="${k}" ${poor||AP.on?'disabled':''}><span class="row" style="gap:6px"><span class="ctag t-${c.tag}">${c.tag}</span>${c.r?`<span class="rar">${c.r}${k===s.opp?' · 이번 달만':''}</span>`:''}</span><b>${c.n}</b><span class="cfx">${esc(fx)}</span>${cost?`<span class="mono note">비용 ${won(cost)}</span>`:'<span class="mono note">비용 없음</span>'}</button>`}).join('')}</div>
    <div class="row"><button class="btn primary big" data-act="next" ${AP.on?'disabled':''}>${s.pick&&s.pick!=='none'?`"${esc(cardOf(s.pick).n)}" 실행하고`:'카드 없이'} ${calM(s.month)}월 마감 →</button>
     <button class="btn sm" data-auto="3" ${AP.on?'disabled':''}>카드 없이 3개월</button><button class="btn sm" data-auto="12" ${AP.on?'disabled':''}>카드 없이 1년</button></div>
+   ${comboHint().length?`<div class="combo"><b>콤보 진행 중</b> · ${comboHint().map(esc).join(' · ')}</div>`:`<p class="note">특정 카드를 순서대로 쓰면 숨겨진 콤보가 발동합니다.</p>`}
    <p class="note">시간표·채용·마케팅·지원사업·세금·메일은 AI 비서가 처리합니다. 큰 사건이 생기면 여러분에게 묻습니다.</p></section>`}
 function handPanel(){if(!s.hand)drawHand();
   return `<div class="hand"><div class="row between"><h2>이번 달 전략 카드</h2><span class="note">1장 선택</span></div>
@@ -1975,7 +1997,7 @@ function chapBanner(){const C=s.chap||(s.chap={i:0,start:0,fails:0});
   const ch=CHAPTERS[C.i];const pr=ch?clamp(ch.p(),0,1):1;const left=ch?C.start+ch.dl*(1+C.fails*0.5)-s.month:0;
   return `<section class="banner">
    <div class="bchap">${ch?`<div class="row between"><span class="eyebrow">CHAPTER ${C.i+1} / ${CHAPTERS.length}</span><span class="mono ${left<=3?'bad':''}">${left>0?`남은 기간 ${left}개월`:'기한 초과'}</span></div>
-     <b class="btitle">${ch.n}</b><span class="note">${esc(ch.d())} · 보상 ${won(ch.rw)}</span><div class="bar ${left<=3?'warn':''}"><i style="width:${pr*100}%"></i></div><span class="mono note">${pc(pr,0)}</span>`:'<b class="btitle">모든 챕터 클리어</b><span class="note">이제 당신만의 기록을 세우세요.</span>'}</div>
+     <b class="btitle">${ch.n}</b>${s.ygoal?`<span class="note"><b>${s.ygoal.y}년 목표</b> ${esc(s.ygoal.n)} · ${pc(Math.min(1,ygoalProgress()),0)}</span>`:''}<span class="note">${esc(ch.d())} · 보상 ${won(ch.rw)}</span><div class="bar ${left<=3?'warn':''}"><i style="width:${pr*100}%"></i></div><span class="mono note">${pc(pr,0)}</span>`:'<b class="btitle">모든 챕터 클리어</b><span class="note">이제 당신만의 기록을 세우세요.</span>'}</div>
    <div class="brival"><span class="eyebrow">라이벌 대결</span><div class="vs"><span>우리 <b class="mono">${num(s.users)}</b></span><div class="vsbar"><i style="width:${share*100}%"></i></div><span><b class="mono">${num(rv.users)}</b> ${esc(rv.name)}</span></div>
      <span class="quote">${esc(rv.ceo||'라이벌 대표')}: "${esc(rivalQuote(share))}"</span></div>
    ${rw<6&&rw!==Infinity?`<div class="bdanger"><span class="eyebrow">경고</span><b class="mono">현금 소진 D-${Math.max(0,Math.round(rw*30))}일</b><span class="note">${s.fund?'투자 라운드 진행 중':'로드쇼·비상경영 카드를 검토하세요'}</span></div>`:''}
@@ -1989,6 +2011,93 @@ function reasons(L){const R2=[];if(!L)return R2;const u=ind().unitS;
   if(L.churned>=1)R2.push(['-',`이탈 ${num(L.churned)}${u} (월 ${pc(L.churnR,1)}${s.debt>50?', 기술부채 영향':strain()>0.1?', 인력 부족 영향':''})`]);
   for(const b of s.buffs||[])R2.push(['*',`${b.n} 효과 적용 중 (${b.left}개월 남음)`]);return R2}
 function countUp(root){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;root.querySelectorAll('[data-cu]').forEach(el=>{const to=+el.dataset.cu,fmt=el.dataset.fmt;const f=fmt==='won'?won:num;let i=0;const n=18;const tick=()=>{i++;const k=1-Math.pow(1-i/n,3);el.textContent=(el.dataset.sign&&to>=0?'+':'')+f(to*k);if(i<n)setTimeout(tick,30)};tick()})}
+
+/* ============ 재미 확장: 기회·전설 카드, 콤보, 인물, 새해 다짐, 투자 협상 ============ */
+const OPPS=[
+  {k:'poach',n:'경쟁사 핵심 개발자의 이직 문의',tag:'기회',r:'희귀',w:()=>s.rival.users>0?2:0,cost:()=>Math.round(rnd(7e7,9e7)/1e6)*1e6,
+    fx:c=>`${s.rival.name} 리드 개발자 영입 (연봉 ${won(c)}) · 경쟁사 개발 속도 저하`,go:c=>{s.team.push({id:s.nextId++,name:pickName(),role:'dev',lv:3,skill:ri(84,92),salary:c,morale:80,ten:0,ramp:0.8,opt:0,trait:pick(['leader','steady']),mil:0,leave:0});s.rival.g*=0.8;s.flags.cardMsg=`${s.rival.name}가 공식 항의했지만 법적 문제는 없습니다.`}},
+  {k:'voucher',n:'정부 긴급 바우처 추가 공모',tag:'기회',r:'희귀',w:()=>isSME()?2:0,cost:()=>0,
+    fx:()=>`대표 체력 -4 · 80% 확률로 바우처 ${won(3e7)} 즉시 지급`,go:()=>{s.F.energy-=4;if(R()<0.8){s.cash+=3e7;s.flags.cardMsg='바우처 선정!'}else s.flags.cardMsg='이번엔 탈락했습니다.'}},
+  {k:'note',n:'멘토의 비밀 노트',tag:'기회',r:'희귀',w:()=>s.cast&&s.cast.mentor.rel>=60?4:0,cost:()=>0,
+    fx:()=>`${s.cast.mentor.name} 멘토가 건넨 노트 · PMF +8 · 완성도 +5`,go:()=>{s.pmf+=8;s.quality+=5;s.cast.mentor.rel+=5}},
+  {k:'auction',n:'부도난 회사 설비·특허 경매',tag:'기회',r:'희귀',w:()=>s.month>12?1:0,cost:()=>sc(3e7),
+    fx:c=>`${won(c)} · 특허 확보로 완성도 +6, 기술부채 -8`,go:c=>{s.cash-=c;s.quality+=6;s.debt-=8}},
+  {k:'pres',n:'대통령 해외순방 경제사절단 동행',tag:'전설',r:'전설',w:()=>s.quality>60&&s.month>18?0.5:0,cost:()=>sc(2e7),
+    fx:c=>`${won(c)} · 브랜드 +12 · 인맥 +6 · 해외 시장 규모 확대`,go:c=>{s.cash-=c;s.brand+=12;s.F.network=Math.min(99,s.F.network+6);s.fx.tam=(s.fx.tam||1)*1.1}},
+  {k:'docu',n:'글로벌 OTT 창업 다큐멘터리 출연',tag:'전설',r:'전설',w:()=>s.users>500?0.4:0,cost:()=>0,
+    fx:()=>`전 세계 공개 · 브랜드 +15 · 신규 유입 폭발 · 대표 체력 -12`,go:()=>{s.brand+=15;s.flags.boost=(s.flags.boost||0)+s.users*0.5+tam()*0.004;s.F.energy-=12}},
+  {k:'bigtech',n:'빅테크와 전략적 제휴',tag:'전설',r:'전설',w:()=>s.quality>70&&s.users>1000?0.4:0,cost:()=>0,
+    fx:()=>`2년간 월 매출 +${won(Math.max(3e7,coreRev()*0.4))} · 기업가치 상승`,go:()=>{s.extra.push({amt:Math.max(3e7,coreRev()*0.4),left:24});s.brand+=8;s.trust+=8}},
+  {k:'genius',n:'천재 개발자가 지분만 받고 합류',tag:'전설',r:'전설',w:()=>s.month>3?0.4:0,cost:()=>0,
+    fx:()=>`역량 98 개발자, 연봉 3,000만 + 지분 2%`,go:()=>{ensureEsop();const g=Math.min(0.02,s.esopFree);s.esopFree-=g;s.team.push({id:s.nextId++,name:pickName(),role:'dev',lv:3,skill:98,salary:3e7,morale:95,ten:0,ramp:0.6,opt:g,trait:'grow',mil:0,leave:0})}},
+  {k:'meme',n:'전 국민 밈 등극',tag:'전설',r:'전설',w:()=>s.flags.launched&&s.ind!=='mfg'?0.3:0,cost:()=>0,
+    fx:()=>`고객 ×1.25 · 브랜드 +10`,go:()=>{s.users*=1.25;s.brand+=10}},
+];
+const COMBOS=[
+  {n:'린 스타트업',seq:['interview','sprint','ads'],d:'인터뷰 → 스프린트 → 광고',go:()=>{s.fx.conv=(s.fx.conv||1)*1.12;return '전환율 영구 +12%'}},
+  {n:'현금 요새',seq:['cut','grant','roadshow'],d:'비상경영 → 지원사업 → 로드쇼',go:()=>{const x=Math.max(5e7,burn()*3);s.cash+=x;return `위기 극복 보너스 ${won(x)}`}},
+  {n:'드림팀',seq:['workshop','star','sprint'],d:'워크숍 → S급 영입 → 스프린트',go:()=>{s.team.forEach(e=>e.morale+=10);addBuff('dev',1.3,6,'드림팀');return '팀 사기 +10, 6개월간 개발 ×1.3'}},
+  {n:'시장 장악',seq:['pr','ads','snipe'],d:'PR 투어 → 광고 → 경쟁사 고객 빼앗기',go:()=>{s.rival.g*=0.7;s.comp*=0.6;return '경쟁사 성장 둔화, 경쟁 압력 대폭 감소'}},
+  {n:'고객 집착',seq:['interview','cs','premium'],d:'인터뷰 → 고객 성공 → 프리미엄',go:()=>{s.fx.churn=(s.fx.churn||1)*0.85;return '이탈률 영구 -15%'}},
+];
+function checkCombo(){const H=s.cardHist||[];for(const c of COMBOS){const n=c.seq.length;if(H.length>=n&&c.seq.every((k,i)=>H[H.length-n+i]===k)){s.combos=s.combos||{};if(s.combos[c.n]){s.combos[c.n]++;gainXP(25);s.cardHist=[];addLog(`콤보 재발동: ${c.n} (이미 발견한 콤보 — 경험치 보너스)`);return}const msg=c.go();s.combos[c.n]=(s.combos[c.n]||0)+1;gainXP(60);s.cardHist=[];addLog(`콤보 발동: ${c.n} — ${msg}`);(s.flags.cele=s.flags.cele||[]);s.flags.comboShow={t:`콤보: ${c.n}`,s:msg};return}}}
+function comboHint(){const H=s.cardHist||[];const out=[];for(const c of COMBOS){for(let m=c.seq.length-1;m>=1;m--){if(H.length>=m&&c.seq.slice(0,m).every((k,i)=>H[H.length-m+i]===k)){out.push(`${c.n} ${m}/${c.seq.length} · 다음: ${(cardOf(c.seq[m])||{}).n||c.seq[m]}`);break}}}return out}
+
+/* 인물 */
+const SPOUSE=['배우자','부모님'];
+function initCast(){s.cast={mentor:{name:pickName(),rel:20,title:pick(['1세대 벤처 창업가','전직 VC 파트너','유니콘 출신 COO'])},family:{name:pickName(),kind:pick(SPOUSE),rel:50}}}
+function castTick(){const C=s.cast;if(!C)return;const A=s.alloc;
+  C.family.rel=clamp(C.family.rel+(s.F.energy<35?-3:0)+((A.rest||0)>=2?2:(A.rest||0)===0?-1:0)+(s.flags.vacation?6:0),-100,100);
+  C.mentor.rel=clamp(C.mentor.rel-0.3,-100,100)}
+function castPanel(){const C=s.cast;if(!C)return '';const row=(n,role,rel,eff)=>`<div class="cast"><div class="row between"><b>${esc(n)}</b><span class="note">${role}</span></div><div class="bar ${rel<0?'bad':rel<30?'warn':''}"><i style="width:${(rel+100)/2}%"></i></div><span class="note">${eff}</span></div>`;
+  const inv=s.rounds.length?s.rounds[s.rounds.length-1].vc:null;
+  return `<div class="panel" style="gap:8px"><h3>주변 사람들</h3>
+   ${row(C.family.name,`가족 (${C.family.kind})`,C.family.rel,C.family.rel>=50?'든든한 응원: 매달 체력 회복 +2':C.family.rel<0?'관계 냉랭: 매달 체력 회복 -2':'보통')}
+   ${row(C.mentor.name,`멘토 · ${C.mentor.title}`,C.mentor.rel,C.mentor.rel>=60?'신뢰 관계: 가끔 "비밀 노트" 카드를 건넴':'점심을 같이 하면 관계가 깊어집니다')}
+   ${inv?row(inv,'리드 투자자',Math.round(s.trust*2-100),s.trust>=60?'추가 투자·브릿지에 우호적':s.trust<35?'인내심 바닥: 대표 교체 논의 위험':'지켜보는 중'):''}</div>`}
+function EV_FAMILY(){const C=s.cast.family;const ev=pick(['anniv','parents','kid','ultimatum'].filter(k=>k!=='ultimatum'||C.rel<-40));
+  if(ev==='ultimatum')return {eb:'가족',title:`${C.name}: "회사랑 나, 둘 중 하나만 골라."`,body:'몇 달째 새벽에 들어오고 주말에도 노트북만 보는 당신에게 가족이 최후통첩을 했습니다.',choices:[
+    {t:'한 달 동안 저녁 7시 퇴근',d:'관계 +40, 이번 달 대표 시간 -3칸, 체력 +15',f:()=>{C.rel+=40;s.flags.vacation=1;s.F.energy+=15;return '오랜만에 함께 저녁을 먹었습니다.'}},
+    {t:'"지금이 제일 중요한 시기야"',d:'관계 -20, 체력 -10',f:()=>{C.rel-=20;s.F.energy-=10;return '집에 돌아오니 아무도 말을 걸지 않습니다.'}}]};
+  if(ev==='anniv')return {eb:'가족',title:'오늘이 기념일인데, 하필 중요한 투자자 미팅이 잡혔습니다',body:`${C.name}과 몇 주 전부터 약속한 저녁입니다.`,choices:[
+    {t:'미팅을 미루고 가족과 저녁',d:'관계 +15, 투자 진행 소폭 지연',f:()=>{C.rel+=15;if(s.fund)s.fund.prog=Math.max(0,s.fund.prog-8);return '투자자는 "가정이 먼저죠"라며 웃었습니다.'}},
+    {t:'미팅에 간다',d:'관계 -15, 투자 진행 +12',f:()=>{C.rel-=15;if(s.fund)s.fund.prog+=12;return '미팅은 잘 됐지만 집안 공기가 차갑습니다.'}}]};
+  if(ev==='parents')return {eb:'가족',title:'부모님: "아직도 그 회사 하니? 대기업 다시 들어가는 건 어떠니"',body:'명절마다 듣는 이야기입니다. 친척들도 한마디씩 거듭니다.',choices:[
+    {t:'회사 매출 그래프를 보여드리며 설득',d:lastRev()>5e7?'설득 가능성 높음':'아직 보여줄 숫자가 부족함',f:()=>{if(lastRev()>5e7||R()<0.3){C.rel+=10;s.F.energy+=5;return '"우리 아들(딸)이 사장님이네" 부모님이 자랑하기 시작했습니다.'}C.rel-=5;return '"그래서 월급은 받니?"'}},
+    {t:'웃으며 넘긴다',d:'',f:()=>'익숙한 일입니다.'}]};
+  return {eb:'가족',title:'아이 학예회 날, 서버 장애 알림이 울립니다',body:'무대에 오르기 10분 전입니다.',choices:[
+    {t:'끝까지 보고 나서 대응',d:'관계 +12, 장애 대응 지연',f:()=>{C.rel+=12;s.flags.outage=1;return '아이가 무대 위에서 손을 흔들었습니다.'}},
+    {t:'바로 노트북을 연다',d:'관계 -12, 장애 즉시 해결',f:()=>{C.rel-=12;return '복도에서 30분 만에 복구했습니다. 아이 순서는 놓쳤습니다.'}}]}}
+function EV_MENTOR(){const M=s.cast.mentor;const intro=M.rel>=50&&s.fund&&!s.fund.offers;return intro?{eb:'멘토',title:`${M.name} 멘토가 VC 파트너를 소개해주겠다고 합니다`,body:'"내가 잘 아는 사람이야. 한번 만나봐."',choices:[
+    {t:'감사히 만난다',d:'투자 진행 +30',f:()=>{s.fund.prog+=30;M.rel+=5;return '소개받은 파트너가 바로 IC에 올리겠다고 합니다.'}}]}:
+   {eb:'멘토',title:`${M.name} 멘토(${M.title})가 점심을 제안합니다`,body:'"요즘 어때? 혼자 끙끙대지 말고 이야기해봐."',choices:[
+    {t:'고민을 털어놓는다',d:'관계 +15, 대표 체력 +6',f:()=>{M.rel+=15;s.F.energy+=6;return pick(['"숫자는 거짓말을 안 해. 리텐션부터 봐."','"채용은 천천히, 해고는 빠르게."','"현금이 떨어지기 6개월 전에 투자를 시작해."','"고객이 돈을 내야 진짜 문제를 푼 거야."'])}},
+    {t:'바빠서 다음에',d:'관계 -8',f:()=>{M.rel-=8;return '멘토가 "그래, 힘내" 하고 메시지를 남겼습니다.'}}]}}
+
+/* 새해 다짐 */
+function yearGoals(){const y=calY(s.month)-1,H=s.hist.filter(h=>calY(h.m)===y),rv=H.reduce((a,h)=>a+h.rev,0);const G=[];
+  G.push({k:'rev',n:`연 매출 ${won(Math.max(rv*2,1.2e8))} 달성`,t:Math.max(rv*2,1.2e8)});
+  G.push({k:'users',n:`${ind().unit} ${num(Math.max(s.users*2,s.users+FIRSTFANS[s.ind]))}${ind().unitS}`,t:Math.max(s.users*2,s.users+FIRSTFANS[s.ind])});
+  G.push({k:'profit',n:'연간 영업이익 흑자',t:0});
+  G.push({k:'team',n:`임직원 ${Math.max(orgSize()*2,orgSize()+5)}명`,t:Math.max(orgSize()*2,orgSize()+5)});
+  if(s.pmf<50)G.push({k:'pmf',n:'PMF 지표 50 이상',t:50});
+  if(Object.keys(s.markets).length<5)G.push({k:'global',n:'해외 시장 1곳 이상 새로 진출',t:Object.keys(s.markets).length+1});
+  const out=[];while(out.length<3&&G.length)out.push(G.splice(Math.floor(R()*G.length),1)[0]);return out}
+function EV_NEWYEAR(){const G=yearGoals();return {eb:`${calY(s.month)}년 새해`,title:'올해의 목표를 하나 정하세요',body:'시무식에서 전 직원 앞에서 발표합니다. 12월에 달성하면 보상이 있습니다.',choices:G.map(g=>({t:g.n,d:'달성 시: 현금 보너스, 팀 사기 +10, 전설 카드 등장 확률↑',f:()=>{s.ygoal={...g,y:calY(s.month)};addLog(`${calY(s.month)}년 목표 발표: ${g.n}`);return '"올해는 반드시 해낸다!" 박수가 터졌습니다.'}}))}}
+function ygoalProgress(){const g=s.ygoal;if(!g)return 0;const H=s.hist.filter(h=>calY(h.m)===g.y);
+  if(g.k==='rev')return H.reduce((a,h)=>a+h.rev,0)/g.t;if(g.k==='users')return s.users/g.t;if(g.k==='profit')return H.length?(H.reduce((a,h)=>a+(h.op||0),0)>0?1:0.5+H.reduce((a,h)=>a+(h.op||0),0)/Math.max(1,H.reduce((a,h)=>a+h.rev,0))):0;
+  if(g.k==='team')return orgSize()/g.t;if(g.k==='pmf')return s.pmf/50;if(g.k==='global')return Object.keys(s.markets).length/g.t;return 0}
+function ygoalJudge(note){const g=s.ygoal;if(!g||g.y!==calY(s.month)-1)return;const ok=ygoalProgress()>=1;
+  if(ok){const b=Math.max(5e7,lastRev()*1.5);s.cash+=b;s.team.forEach(e=>e.morale+=10);gainXP(80);s.flags.legendBoost=1;note(`${g.y}년 목표 달성: ${g.n}! 보너스 ${won(b)}.`,'good');(s.flags.chapClear=s.flags.chapClear||[]).push({t:`${g.y}년 목표 달성`,s:g.n})}
+  else note(`${g.y}년 목표 미달성: ${g.n} (${pc(Math.min(1,ygoalProgress()),0)}).`,'bad');s.ygoal=null}
+
+/* 투자 협상 */
+function EV_TERM(){const f=s.fund,r=ROUNDS[f.i];const o=f.offers.reduce((a,b)=>b.pre>a.pre?b:a);f.nego=f.nego||0;const risk=clamp(0.12+f.nego*0.16+(attract(f.i)<1?0.12:0)-(f.offers.length>1?0.08:0),0.05,0.85);
+  return {eb:`${r.name} 텀시트 협상`,title:`${o.vc}: 프리머니 ${won(o.pre)}, 투자금 ${won(o.amt)}`,body:`희석 ${pc(o.dil)} · 투자 후 대표 지분 약 ${pc(myPct()*(1-o.dil))}. ${f.offers.length>1?`경쟁 텀시트 ${f.offers.length-1}건이 더 있어 협상력이 있습니다.`:'단독 제안입니다.'} 역제안할수록 투자자가 떠날 위험이 커집니다.`,choices:[
+    {t:'이 조건으로 서명',d:'실사 후 클로징',f:()=>{acceptOffer(f.offers.indexOf(o));return '서명했습니다. 실사가 시작됩니다.'}},
+    {t:'밸류 +12% 역제안',d:`투자자가 떠날 확률 약 ${pc(risk,0)}`,f:()=>{f.nego++;if(R()>risk){o.pre*=1.12;s.flags.negoWin=(s.flags.negoWin||0)+1;o.dil=o.amt/(o.pre+o.amt);queue.unshift({ev:EV_TERM()});return `"…좋습니다. 맞춰드리죠." 프리머니 ${won(o.pre)}로 상향.`}
+      f.offers=f.offers.filter(x=>x!==o);if(f.offers.length){queue.unshift({ev:EV_TERM()});return `${o.vc}가 협상 테이블을 떠났습니다. 다른 텀시트가 남아 있습니다.`}f.offers=null;f.prog=55;f.nego=0;return `${o.vc}가 "생각이 많이 다르네요"라며 떠났습니다. 라운드가 원점에 가까워졌습니다.`}},
+    {t:'모두 거절',d:'라운드 종료',f:()=>{s.fund=null;return '텀시트를 모두 거절했습니다.'}}]}}
 
 /* ============ 엔딩 ============ */
 function endGame(kind,value=0,who=''){
@@ -2478,6 +2587,7 @@ function plan(){
    ${meter('대표 체력',F.energy,100,F.energy<30?'bad':F.energy<50?'warn':'')}
    <div class="row between note"><span>대표 개인 자산 (생활비 월 250만)</span><b class="mono ${s.wealth<0?'bad':''}">${won(s.wealth)}</b></div>
    <p class="note">예상 지출 약 <b class="mono">${won(est)}</b> (매출원가·세금 제외)</p>
+   ${castPanel()}
    <div class="ap ${AP.on?'on':''}"><div class="row between"><b>AI 자동 플레이</b>${AP.on?`<span class="chip acc">진행 중 · ${AP.months}개월</span>`:''}</div>
     <div class="row"><select id="apStyle" style="width:auto" ${AP.on?'disabled':''}>${Object.entries(AISTYLE).map(([k,v])=>`<option value="${k}" ${AP.style===k?'selected':''}>${v.n}</option>`).join('')}</select>
      <select id="apSpeed" style="width:auto">${[[1200,'느리게'],[500,'보통'],[150,'빠르게'],[0,'최고속']].map(([v,n])=>`<option value="${v}" ${AP.speed==v?'selected':''}>${n}</option>`).join('')}</select></div>
