@@ -879,14 +879,15 @@ function consensus(Q,P){
   const qoqT=qoq.length?clamp(qoq.reduce((a,b)=>a+b,0)/qoq.length,-0.15,0.25):clamp(growth(6)*3,-0.1,0.25);
   let rev=last.q*(1+qoqT*0.7);
   const same=n>=4?Q[n-4]:null;
-  if(same&&same.q>0){const yoy=[];for(let i=Math.max(4,n-4);i<n;i++)if(Q[i-4].q>0)yoy.push(Q[i].q/Q[i-4].q-1);
-    yoy.sort((a,b)=>a-b);const g=clamp(yoy[Math.floor(yoy.length/2)],-0.4,1.2);rev=0.85*same.q*(1+g)+0.15*rev}
+  if(same&&same.q>0){const yoy=[];for(let i=Math.max(4,n-4);i<=n;i++){const a_=Q[i-4],b_=i<n?Q[i]:null;if(b_&&a_.q>0)yoy.push(b_.q/a_.q-1)}
+    if(!yoy.length)yoy.push(qoqT*4);yoy.sort((a,b)=>a-b);const g=clamp(yoy[Math.floor(yoy.length/2)],-0.4,1.2);rev=0.85*same.q*(1+g)+0.15*rev}
   // 애널리스트 학습: 직전 분기 오차만큼 눈높이 조정
   P.bias=clamp((P.bias||1)*(1+clamp(P.lastSur||0,-0.25,0.25)*0.6),0.7,1.3);
   rev*=P.bias*rnd(0.96,1.0);
   const mg=Q.slice(-2).reduce((a,x)=>a+(x.q>0?x.op/x.q:0),0)/Math.min(2,n);
   const op=rev*(mg+(mg<0?0.008:0.002))*clamp((P.opBias||1)*(1+clamp(P.lastOpSur||0,-0.3,0.3)*0.5),0.7,1.3)*rnd(0.96,1.0);
-  return {rev,op}}
+  const okN=x=>isFinite(x)&&x!==0;if(!okN(rev))rev=Math.max(1,last.q);const opF=isFinite(op)?op:last.op||0;
+  return {rev,op:opF}}
 function earnTag(sur,op,score){
   if(sur>=0.03&&op>=0.03)return score>=0.12?'어닝 서프라이즈':'호실적';
   if(sur<=-0.03&&op<=-0.03)return score<=-0.12?'어닝 쇼크':'실적 부진';
@@ -894,13 +895,14 @@ function earnTag(sur,op,score){
   if(sur>0&&op<0)return score>=0?'외형 성장 (이익은 미달)':'엇갈린 실적 (매출 상회, 이익 미달)';
   return '컨센서스 부합'}
 function stockTick(note,cal){
-  const P=s.pub;P.prev=P.price;if(P.halt){haltTick(P,note);return}
+  const P=s.pub;if(!isFinite(P.price)||P.price<=0)P.price=isFinite(P.prev)&&P.prev>0?P.prev:P.ipoPrice||10000;if(!isFinite(P.shares)||P.shares<=0)P.shares=1e6;P.mcap=P.price*P.shares;if(P.cons!=null&&!isFinite(P.cons))P.cons=null;if(!isFinite(P.opCons))P.opCons=0;
+  P.prev=P.price;if(P.halt){haltTick(P,note);return}
   const fund=fairVal()*1.15*(P.adr&&P.adr.on?1.25:1);
   adrTick(P,note);
   const di=rnd(-0.05,0.055)+(s.climate-1)*0.03;P.idx*=Math.exp(di);
   let drift=Math.log(fund/P.mcap)*0.12+di*1.2+rnd(-0.08,0.08)+(P.shock||0);P.shock=0;
   if(s.month>=P.lockup){let sold=0;for(const c of s.cap)if(c.t==='inv'&&c.pct>0.001){const x=c.pct*0.12;c.pct-=x;sold+=x}if(sold>0){const pb=s.cap.find(c=>c.t==='pub');pb.pct+=sold;drift-=sold*1.5}}
-  P.price=Math.max(100,P.price*Math.exp(drift));P.mcap=P.price*P.shares;
+  if(!isFinite(drift))drift=0;P.price=Math.max(100,P.price*Math.exp(drift));P.mcap=P.price*P.shares;
   marketDetail(P,note);
   if(s.flags.squeezeFade>0){s.flags.squeezeFade--;P.price*=rnd(0.6,0.75);P.mcap=P.price*P.shares;if(!s.flags.squeezeFade)note('숏 스퀴즈 거품이 대부분 꺼졌습니다.')}
   if(s.flags.themeCrash===s.month){P.price*=0.72;P.mcap=P.price*P.shares;note(`${s.flags.themeName} 테마 거품 붕괴. 주가 급락.`,'bad');boardCtx('theme')}
