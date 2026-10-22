@@ -1,4 +1,10 @@
-<title>스타트업 생존기</title>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}.backnew{display:inline-flex;align-self:flex-start;margin-bottom:10px;padding:6px 12px;border-radius:999px;border:1px solid currentColor;background:none;color:inherit;font:inherit;font-size:13px;cursor:pointer;opacity:.75}</style>
+<title>스타트업 생존기 클래식</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2760,7 +2766,7 @@ function renderSetup(){
   const S=ui.setup,saved=load();
   const opt=(group,k,v,extra='')=>`<button class="opt" data-set="${group}" data-v="${k}" aria-pressed="${S[group]===k}"><b>${v.name}</b><span>${v.desc||v.note}</span>${extra}</button>`;
   app.innerHTML=`<div class="setup">
-   <div class="hero"><span class="muted" style="letter-spacing:.1em;font-size:12px">한국 스타트업 경영 시뮬레이션</span><h1>스타트업 생존기</h1>
+   <div class="hero"><button class="backnew" type="button">← 스와이프 버전으로</button><span class="muted" style="letter-spacing:.1em;font-size:12px">한국 스타트업 경영 시뮬레이션</span><h1>스타트업 생존기</h1>
     <p>법인 설립부터 상장, 그 이후까지. IT 스타트업이든 공장을 짓는 제조업이든. 월 단위로 시간을 배분하고, 사람을 뽑고, 돈을 구하세요. 4대보험, 부가세, 법인세, 퇴직금, 청산우선권, TIPS, 기보 대출까지 현실의 규칙이 그대로 적용됩니다. 대부분의 회사는 3년을 넘기지 못합니다.</p></div>
    ${saved&&!saved.ended?`<div class="callout good row between"><span>저장된 게임: <b>${esc(saved.co)}</b> · 업력 ${saved.month}개월 · 현금 ${won(saved.cash)}</span><button class="btn primary" data-act="continue">이어하기</button></div>`:''}
    ${(()=>{const h=hofGet();if(!h.games&&!h.bestVal)return '';return `<div class="panel"><div class="row between"><h2>명예의 전당</h2><span class="note">플레이 ${h.games||0}회</span></div><div class="grid3">
@@ -2963,3 +2969,5 @@ function start(data){if(data&&data.s){s=data.s;ui=Object.assign(ui,data.ui||{})}
 if(window.claude?.hot){window.claude.hot.snapshot?.(()=>({s,ui}))}
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
 </script>
+<script>document.addEventListener('click',e=>{if(e.target.closest('.backnew')){if(history.length>1)history.back();else location.href='./'}});</script>
+</html>

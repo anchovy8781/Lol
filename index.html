@@ -159,6 +159,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--lamp);outline-o
 .howto{font-size:14px;line-height:1.65;color:var(--muted);margin:0}
 .howto b{color:var(--ink);font-weight:400;font-family:var(--display)}
 
+.classic{color:var(--muted);font-size:14px;text-decoration:none;font-family:var(--body)}
+.iconbtn.mis{width:auto;min-width:40px;padding:0 6px;font-family:var(--num);font-size:12px;color:var(--lamp)}
+.top{grid-template-columns:40px 1fr 52px!important}
+.items{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px;min-height:0}
+.items:empty{display:none}
+.itm{padding:5px 10px;border-radius:999px;font-size:12.5px;background:var(--glass);border:1px solid var(--line)}
+.itm.use{border-color:var(--lamp);color:var(--lamp);cursor:pointer}
+.card.gold{box-shadow:0 0 0 3px var(--lamp),0 0 34px 4px rgba(245,184,65,.55),0 28px 50px -18px rgba(0,0,0,.7)}
+.card.gold .art::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.45) 45%,transparent 60%);background-size:250% 100%;animation:shine 2.4s ease-in-out infinite}
+@keyframes shine{from{background-position:120% 0}to{background-position:-120% 0}}
+.goldtag{position:absolute;right:12px;bottom:16px;padding:4px 9px;border-radius:999px;background:var(--lamp);color:var(--lamp-ink);font-family:var(--display);font-size:13px}
+.toast.gold{background:var(--lamp);color:var(--lamp-ink)}
+.mlist{display:grid;gap:6px}
+.mrow{display:flex;gap:10px;align-items:baseline;padding:10px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--line);font-size:14px;line-height:1.45}
+.mrow span{color:var(--lamp);flex:none}.mrow b{font-weight:400;font-family:var(--display)}
+.mrow.done{border-color:var(--lamp);color:var(--lamp)}
 @media (max-height:680px){.ask{min-height:4.4em;padding-top:8px;font-size:15.5px}.g svg{width:32px;height:32px}.choices{margin-top:8px}.choice{min-height:44px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
@@ -268,7 +284,7 @@ function catArt(m){const f='#e8a33d',fd='#c7802a';const eyes=m==='h'?`<path d="M
 /* ============ 카드 덱 ============
    선택지 효과: c 현금 · t 팀 · u 고객 · i 투자자 · hp 대표 체력(숨김) · v 기업가치 배수
    p 성공 확률(ok/no 분기) · res 결과 문구 · set/inc/clr 플래그 · later [카드, 몇 달 뒤] · next 바로 다음 카드 · end 엔딩 */
-const K=(id,who,m,q,L,R,o={})=>({id,who,m,q,L,R,st:o.st||[0,9],w:o.w??1,req:o.req,once:o.once,prio:o.prio});
+const K=(id,who,m,q,L,R,o={})=>({id,who,m,q,L,R,st:o.st||[0,9],w:o.w??1,req:o.req,once:o.once,gold:o.gold});
 const F=k=>S.flags[k]||0;
 const CARDS=[
  // ---- 튜토리얼 · 창업 초기
@@ -345,7 +361,7 @@ const CARDS=[
  K('global','press','n','글로벌 공룡 기업이 한국 시장 진출을 선언했습니다. 대응 전략은요?',['정면 승부',{c:-8,u:5,hp:-4}],['틈새시장 집중',{u:-4,i:-3,t:3}],{st:[1,9]}),
  K('copy','rival','s','저희도 똑같은 기능 출시했어요. 가격은 반값이고요. 미안해요 ㅎㅎ',['가격 맞불',{c:-8,u:4}],['품질로 승부',{t:-4,u:2,hp:-3}],{st:[1,9]}),
  K('gossip','rival','s','업계 모임에서 저희 대표님이 그쪽 험담을 좀 했다던데요?',['무시한다',{}],['SNS로 받아친다',{p:.5,ok:{u:7,res:'통쾌한 반박에 팔로워가 늘었습니다.'},no:{u:-4,i:-6,res:'진흙탕 싸움이라는 기사가 났습니다.'}}]),
- K('japan','coo','h','일본 진출 타이밍입니다. 현지 법인을 세우시죠.',['국내 1등부터',{u:3,i:-3}],['간다',{c:-12,p:.5,ok:{u:12,v:1.15,i:6,res:'<b>일본 앱스토어 3위!</b>'},no:{u:-2,i:-4,res:'현지화 실패. 1년 만에 철수했습니다.'}}],{st:[2,9],once:1}),
+ K('japan','coo','h','일본 진출 타이밍입니다. 현지 법인을 세우시죠.',['국내 1등부터',{u:3,i:-3}],['간다',{c:-12,p:.5,ok:{u:12,v:1.15,i:6,set:'japanOK',res:'<b>일본 앱스토어 3위!</b>'},no:{u:-2,i:-4,res:'현지화 실패. 1년 만에 철수했습니다.'}}],{st:[2,9],once:1}),
  K('hacker','hacker','s','화이트해커입니다. 고객 DB가 그대로 열려 있네요. 버그바운티 주실래요?',['협박하는 거예요?',{p:.4,ok:{res:'조용히 넘어갔습니다. 서둘러 막았습니다.'},no:{u:-15,i:-8,res:'유출 사실이 커뮤니티에 퍼졌습니다.'}}],['사례하고 바로 막자',{c:-4,u:3}]),
  K('poc','bigco','s','저희랑 공동 PoC 해보시죠. 비용은… 무상으로요.',['유상 아니면 안 해요',{}],['해봅시다',{t:-6,hp:-4,p:.5,ok:{c:12,u:8,res:'<b>정식 계약 성사!</b>'},no:{u:-5,res:'PoC가 끝나자 연락이 끊겼습니다. 석 달 뒤 대기업이 비슷한 서비스를 냈습니다.'}}],{st:[1,9]}),
  K('tender','gov','n','공공기관 입찰 공고가 떴습니다. 제출 서류만 200장이에요.',['패스',{}],['도전',{hp:-6,p:.4,ok:{c:16,i:4,res:'<b>낙찰!</b>'},no:{res:'최저가 경쟁에서 떨어졌습니다.'}}]),
@@ -380,6 +396,42 @@ const CARDS=[
  K('rumor','angel','w','자네, 투자자들 사이에 소문이 안 좋아. 내가 중재해 줄까?',['혼자 해결할게요',{i:3,hp:-5}],['부탁드립니다',{i:12,v:.95}],{req:()=>S.g.i<22,w:5}),
  K('payday','coo','w','다음 주가 월급날인데 통장이 비어갑니다. 어떻게 할까요?',['대표 월급부터 끊는다',{c:6,hp:-6}],['매출 채권 할인',{c:10,u:-4}],{req:()=>S.g.c<22,w:5}),
 
+ // ---- 추가 일반 카드
+ K('sns','press','w','대표님 SNS 글이 "꼰대 논란"으로 퍼지고 있습니다.',['삭제하고 사과',{u:-2,t:3}],['소신을 지킨다',{p:.4,ok:{u:6,res:'오히려 지지 댓글이 쏟아졌습니다.'},no:{u:-8,t:-5,res:'불매 운동 해시태그가 생겼습니다.'}}]),
+ K('okr','coo','n','OKR을 도입하면 다들 목표가 선명해질 거예요.',['엑셀이면 충분해',{t:2}],['도입하자',{t:-4,u:5}],{st:[1,9]}),
+ K('dog','design','h','사무실에 강아지 데려와도 돼요? 진짜 얌전해요.',['안 돼',{t:-3}],['펫 프렌들리!',{t:7,u:-1,res:'사무실 분위기가 확 밝아졌습니다.'}]),
+ K('whale','cust','s','저희 회사가 매출의 40%잖아요? 저희만을 위한 기능을 만들어 주셔야겠어요.',['거절합니다',{u:-6,c:-4}],['맞춰드릴게요',{c:8,t:-6,u:2}],{st:[1,9]}),
+ K('aicode','dev','h','AI 코딩 도구를 전사 도입하면 개발 속도가 두 배래요. 라이선스는 월 천만 원.',['아직은 이르다',{t:-2}],['도입',{c:-5,u:6,t:4}]),
+ K('popup','mkt','h','성수동 팝업스토어 하실래요? 줄 서는 사진 한 장이면 끝나요.',['온라인에 집중',{}],['팝업 오픈',{c:-8,p:.6,ok:{u:12,res:'<b>오픈런!</b> 대기 줄이 골목을 돌았습니다.'},no:{u:3,res:'비 오는 주말이라 한산했습니다.'}}]),
+ K('govaudit','gov','w','정부지원금 사용 내역 점검입니다. 영수증이 좀 비는데요?',['솔직히 말한다',{c:-6}],['어떻게든 맞춘다',{inc:'shady',p:.6,ok:{res:'무사히 넘어갔습니다.'},no:{c:-12,i:-5,res:'지원금 환수에 참여 제한까지.'}}],{st:[0,3]}),
+ K('allies','rival','s','솔직히 우리 둘 다 힘들잖아요. 공동 마케팅 하실래요?',['적과 손잡지 않는다',{t:3}],['손잡자',{u:8,c:2,i:-3}]),
+ K('golf','vc','s','주말에 LP분들 골프 모임이 있는데 같이 가시죠.',['가족과 보낼게요',{hp:6,i:-4}],['갑니다',{i:8,hp:-6}]),
+ K('mentor','angel','h','내가 멘토링 좀 해줄까? 매주 아침 7시야.',['괜찮습니다',{}],['부탁드립니다',{hp:-4,i:5,t:3}]),
+ K('cloud','cto','w','클라우드 비용이 매출의 30%예요. 한 달만 최적화에 쓰죠.',['성장이 먼저',{c:-6,u:3}],['최적화',{c:8,u:-3}],{st:[1,9]}),
+ K('esg','press','n','ESG 보고서 내셨나요? 기관투자자들이 묻기 시작했습니다.',['아직이요',{i:-5}],['발간한다',{c:-5,i:7}],{st:[3,9],once:1}),
+ K('bday','hr','h','오늘 대표님 생일이래요! 팀이 깜짝 파티를 준비했어요.',['일하자, 얘들아',{t:-6}],['고마워!',{t:8,hp:5}],{once:1}),
+ K('blind','dev','a','누가 사내 슬랙 캡처를 익명 커뮤니티에 올렸어요.',['색출한다',{t:-12}],['투명하게 공유',{t:6,i:-3}],{st:[1,9]}),
+ K('dad','cto','h','대표님… 저 다음 달에 아빠가 돼요! 육아휴직 써도 될까요?',['지금은 좀…',{t:-10}],['당연하지!',{t:10,u:-5}],{st:[1,9],once:1}),
+ K('gift','angel','s','명함 한 장 주지. 곤란할 때 이 사람한테 연락하게.',['부담스러워요',{}],['감사히 받겠습니다',{item:'card',i:3}],{st:[0,4],once:1}),
+ K('charm','mom','h','엄마가 절에서 부적 받아왔다. 지갑에 꼭 넣고 다녀라.',['미신이에요',{hp:-2}],['고마워 엄마',{item:'luck',hp:4}],{once:1}),
+ K('insure','bank','n','기업 종합보험 가입하시겠어요? 큰일이 나도 한 번은 막아줍니다.',['아깝네요',{}],['가입',{c:-6,item:'life'}],{once:1}),
+ K('refund','cust','a','결제가 두 번 됐어요! 환불 안 해주면 소비자원에 신고할 거예요.',['규정대로 처리',{u:-4}],['즉시 환불 + 쿠폰',{c:-3,u:5}]),
+ K('award2','gov','h','"올해의 일자리 창출 기업"에 선정됐습니다. 고용장려금도 나와요.',['감사합니다',{c:6,t:3}],['시상식에서 소감 발표',{c:6,u:4,hp:-2}],{st:[2,9],once:1}),
+ K('stockcrash','press','w','나스닥 기술주 폭락. 국내 스타트업 밸류에이션도 일제히 하락 중입니다.',['버틴다',{v:.85,i:-4}],['비용 절감 선언',{v:.92,c:6,t:-6}],{st:[1,9]}),
+ K('boom','press','h','투자 시장에 봄바람! VC들이 앞다퉈 딜을 찾고 있습니다.',['차분하게',{i:3}],['IR 총력전',{i:9,hp:-5,v:1.08}],{st:[1,9]}),
+
+ // ---- 황금 카드 (희귀)
+ K('gIdol','press','h','속보! 세계적인 아이돌 멤버가 라이브 방송에서 우리 서비스를 쓰는 모습이 잡혔습니다!',['조용히 지켜본다',{u:10}],['공식 감사 이벤트',{c:-5,u:18,v:1.15}],{gold:1,once:1,w:.16}),
+ K('gTrip','gov','h','대통령 해외 순방 경제사절단에 초청됐습니다!',['일이 많아서요',{t:3}],['영광입니다',{i:12,u:6,hp:-6,item:'card'}],{gold:1,once:1,w:.16,st:[1,9]}),
+ K('gDocu','press','s','넷플릭스 스타트업 다큐멘터리 섭외가 왔습니다. 촬영팀이 6개월간 상주합니다.',['사양합니다',{}],['촬영 OK',{u:14,t:-8,i:6}],{gold:1,once:1,w:.16,st:[1,9]}),
+ K('gCoin','tax','s','3년 전 비상금으로 사둔 비트코인이 10배가 됐습니다…',['계속 들고 간다',{p:.5,ok:{c:20,res:'<b>또 두 배!</b> 투자 천재 소리를 듣습니다.'},no:{c:-4,res:'폭락. 그래도 원금은 건졌습니다.'}}],['전량 매도',{c:16,i:-3}],{gold:1,once:1,w:.16}),
+ K('gLotto','mom','h','얘야! 엄마 복권 2등 됐다! 회사에 좀 보태줄까?',['엄마 쓰세요',{hp:10,t:3,item:'luck'}],['감사히 받을게요',{c:15}],{gold:1,once:1,w:.16}),
+ K('gDM','angel','s','실리콘밸리 전설적인 투자자에게서 DM이 왔습니다: "Love your product. Let\'s talk."',['스팸이겠지',{}],['바로 답장',{p:.6,ok:{i:18,v:1.25,res:'<b>글로벌 투자 유치!</b> 기업가치가 뛰었습니다.'},no:{i:-3,res:'사칭 계정이었습니다…'}}],{gold:1,once:1,w:.16,st:[1,9]}),
+ K('gSeal','cat','h','(서버가 서랍 뒤에서 잃어버린 법인 인감을 물어왔다!)',['쓰다듬는다',{t:5}],['츄르 1년 치 하사',{c:-2,t:8,item:'life'}],{gold:1,once:1,w:.4,req:()=>F('cat')}),
+ K('gHack','cto','h','지훈이 글로벌 해커톤에서 우승했어요! 상금 1억에 빅테크 입사 제의까지 받았대요.',['축하해, 보내줄게',{c:10,t:-12}],['스톡옵션으로 붙잡는다',{t:8,v:.96,u:5}],{gold:1,once:1,w:.16,st:[1,9]}),
+ K('gRivalDown','rival','w','저희… 폐업합니다. 고객 리스트, 인수하실래요?',['거절',{t:2}],['인수한다',{c:-10,u:20,v:1.1}],{gold:1,once:1,w:.16,st:[1,9]}),
+ K('gMeme','mkt','h','우리 404 에러 페이지가 밈이 돼서 SNS를 휩쓸고 있어요!',['얼른 고친다',{}],['굿즈 출시',{u:12,c:6}],{gold:1,once:1,w:.16}),
+
  // ---- 상장 준비
  K('underwriter','lawyer','n','상장 주관사를 골라야 합니다. 대형 증권사는 수수료가 비싸지만 공모가를 잘 받아줘요.',['중소형 증권사',{c:3,i:-3}],['대형 증권사',{c:-8,i:8,v:1.05}],{st:[4,9],once:1}),
  K('audit','tax','w','지정감사인이 매출 인식 기준을 문제 삼습니다.',['정면 반박',{p:.5,ok:{i:3,res:'감사인이 우리 손을 들어줬습니다.'},no:{i:-10,v:.9,res:'감사의견이 늦어져 상장 일정이 밀렸습니다.'}}],['보수적으로 수정',{v:.92,i:4}],{st:[4,9],once:1}),
@@ -413,7 +465,7 @@ const G_END={c:['bankrupt','takeover'],t:['exodus','coup'],u:['shutdown','meltdo
 /* ============ 저장 ============ */
 const KEY_RUN='swipe-startup-run-v1',KEY_META='swipe-startup-meta-v1';
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let META=Object.assign({runs:0,best:0,bestM:0,ends:{},sound:1,vibe:1,howto:0},ls.get(KEY_META)||{});
+let META=Object.assign({runs:0,best:0,bestM:0,ends:{},stars:0,sound:1,vibe:1,howto:0},ls.get(KEY_META)||{});
 const saveMeta=()=>ls.set(KEY_META,META);
 let S=null;
 const saveRun=()=>{if(S&&!S.over)ls.set(KEY_RUN,S);else ls.del(KEY_RUN)};
@@ -425,40 +477,57 @@ const INDS={
   saas:{n:'B2B SaaS',ico:'B2B',d:'투자자가 좋아하지만 고객 확보가 더딥니다.',g:{i:5,u:-5}},
   shop:{n:'D2C 커머스',ico:'샵',d:'처음부터 매출이 나지만 팀이 고생합니다.',g:{c:5,t:-5}}
 };
+const ITEMS={luck:{e:'🍀',n:'행운 부적',d:'다음 "운에 맡기는" 선택이 반드시 성공합니다.'},life:{e:'🛟',n:'구명조끼',d:'게이지가 바닥나거나 넘칠 때 한 번 막아줍니다.'},card:{e:'📇',n:'VC 명함',d:'눌러서 지금 카드를 넘길 수 있습니다.'}};
+const MISSIONS=[
+  {id:'seed12',t:'12개월 안에 시드 투자 유치',chk:()=>S.stage>=1&&S.m<=12},
+  {id:'a30',t:'30개월 안에 시리즈 A 유치',chk:()=>S.stage>=2&&S.m<=30},
+  {id:'v100',t:'기업가치 100억 달성',chk:()=>S.v>=100},
+  {id:'v1000',t:'기업가치 1,000억 달성',chk:()=>S.v>=1000},
+  {id:'cat',t:'사무실 고양이 입양',chk:()=>F('cat')},
+  {id:'japan',t:'해외 진출 성공',chk:()=>F('japanOK')},
+  {id:'bal24',t:'24개월 동안 모든 게이지 25~75 유지',chk:()=>S.m>=24&&!F('unbal')},
+  {id:'live60',t:'60개월 생존',chk:()=>S.m>=60},
+  {id:'gold2',t:'황금 카드 2장 만나기',chk:()=>(S.goldSeen||0)>=2},
+  {id:'lucky3',t:'운에 맡긴 선택 3번 성공',chk:()=>F('lucky')>=3},
+  {id:'item3',t:'아이템 3개 모으기',chk:()=>F('gotItems')>=3},
+  {id:'b36',t:'36개월 안에 시리즈 B 유치',chk:()=>S.stage>=3&&S.m<=36},
+];
+function giveItem(k){S.items[k]=(S.items[k]||0)+1;S.flags.gotItems=(S.flags.gotItems||0)+1}
 function perks(){return Object.keys(META.ends).map(id=>ENDS[id]&&ENDS[id].perk).filter(Boolean)}
 function newRun(co,ceo,ind){
   const g={c:50,t:50,u:50,i:50};for(const [k,v] of Object.entries(INDS[ind].g))g[k]+=v;
   let hpMax=100;for(const p of perks()){if(p[0]==='hp')hpMax=120;else g[p[0]]+=8}
   for(const k of GK)g[k]=clamp(g[k],20,80);
-  S={co,ceo,ind,g,hp:hpMax,hpMax,m:0,v:5,stage:0,flags:{},seen:{},recent:[],sched:[],next:null,cur:null,dyn:null,cool:{round:0,ipo:0},over:null};
+  S={co,ceo,ind,g,hp:hpMax,hpMax,m:0,v:5,stage:0,flags:{},seen:{},recent:[],sched:[],next:null,cur:null,dyn:null,cool:{round:0,ipo:0},over:null,items:{luck:0,life:0,card:0},mis:MISSIONS.slice().sort(()=>R()-.5).slice(0,3).map(m=>m.id),misDone:{},goldSeen:0};
   S.cur=pickNext();saveRun();META.runs++;saveMeta()}
 const curCard=()=>S.dyn?dynCard(S.dyn):CARD[S.cur];
 function dynCard(d){
   if(d.kind==='round'){const nm=STAGES[S.stage+1],who=S.stage===0?'angel':'vc';
     return {id:'round',who,m:d.toxic?'s':'h',q:`${nm} 텀시트가 도착했습니다. 기업가치 ${fmtV(S.v)}에 ${fmtV(S.v*.25)} 투자${d.toxic?'. 단, "성과 미달 시 대표 교체" 조항이 붙어 있습니다.':'.'} 서명하시겠어요?`,
       L:['더 키우고 받겠다',{i:-6,cool:'round'}],R:['서명합니다',{stageUp:1,i:d.toxic?16:8}]}}
-  return {id:'ipo',who:'lawyer',m:'h',q:`상장예비심사를 통과했습니다! 예상 시가총액 ${fmtV(S.v)}. 지금 상장할까요?`,
-    L:['더 키우고 상장',{i:-4,cool:'ipo'}],R:['상장한다',{end:S.v>=UNI_AT?'unicorn':'ipo'}]}}
+  const bal=GK.every(k=>S.g[k]>=30&&S.g[k]<=70);
+  return {id:'ipo',who:'lawyer',m:bal?'h':'w',q:`상장예비심사를 통과했습니다! 예상 시가총액 ${fmtV(S.v)}. ${bal?'회사 상태가 탄탄해 수요예측 분위기가 좋습니다.':'다만 지표가 불안해서 기관들 반응이 반반입니다.'} 공모를 진행할까요?`,
+    L:['더 키우고 상장',{i:-4,cool:'ipo'}],R:['공모 진행!',{p:bal?.9:.55,ok:{end:S.v>=UNI_AT?'unicorn':'ipo'},no:{i:-12,c:-6,cool:'ipo',res:'<b>수요예측 부진.</b> 상장을 철회했습니다. 몇 달 뒤 다시 도전할 수 있습니다.'}}]}}
 function weightOf(c){return typeof c.w==='function'?c.w():c.w}
 function pickNext(){
   S.dyn=null;
   if(S.next){const n=S.next;S.next=null;return mark(n)}
   const due=S.sched.findIndex(x=>x[1]<=S.m);if(due>=0){const id=S.sched[due][0];S.sched.splice(due,1);return mark(id)}
   if(!S.seen.tut1)return mark('tut1');if(!S.seen.tut2)return mark('tut2');
-  if(S.stage>=5&&S.v>=IPO_AT&&S.m>=Math.max(48,S.cool.ipo)){S.dyn={kind:'ipo'};return 'ipo'}
+  if(S.stage>=5&&S.v>=IPO_AT&&S.m>=Math.max(48,S.cool.ipo)&&GK.every(k=>S.g[k]>=20&&S.g[k]<=85)){S.dyn={kind:'ipo'};return 'ipo'}
   if(S.stage<5&&S.v>=ROUND_AT[S.stage]&&S.m>=S.cool.round){S.dyn={kind:'round',toxic:S.stage>=2&&R()<.3};return 'round'}
   const ok=(c,rec)=>{if(S.stage<c.st[0]||S.stage>c.st[1])return 0;if(c.once&&S.seen[c.id])return 0;if(c.req&&!c.req())return 0;if(rec&&S.recent.includes(c.id))return 0;return weightOf(c)};
   let pool=CARDS.map(c=>[c,ok(c,true)]).filter(x=>x[1]>0);
   if(!pool.length)pool=CARDS.map(c=>[c,ok(c,false)]).filter(x=>x[1]>0);
   let r=R()*pool.reduce((a,x)=>a+x[1],0);for(const [c,w] of pool){r-=w;if(r<=0)return mark(c.id)}
   return mark(pool[pool.length-1][0].id)}
-function mark(id){S.seen[id]=(S.seen[id]||0)+1;S.recent.push(id);if(S.recent.length>16)S.recent.shift();return id}
+function mark(id){if(CARD[id]&&CARD[id].gold)S.goldSeen=(S.goldSeen||0)+1;S.seen[id]=(S.seen[id]||0)+1;S.recent.push(id);if(S.recent.length>16)S.recent.shift();return id}
 
 function resolveFx(fx){const f=Object.assign({},fx);delete f.ok;delete f.no;delete f.p;
-  if(fx.p!=null){const ok=R()<fx.p,b=ok?fx.ok:fx.no;for(const [k,v] of Object.entries(b||{}))f[k]=(typeof v==='number'&&typeof f[k]==='number')?f[k]+v:v;f.lucky=ok}
+  if(fx.p!=null){let ok=R()<fx.p;if(S.items.luck>0){S.items.luck--;ok=true;f.charm=1}const b=ok?fx.ok:fx.no;for(const [k,v] of Object.entries(b||{}))f[k]=(typeof v==='number'&&typeof f[k]==='number')?f[k]+v:v;f.lucky=ok}
   return f}
 function apply(side){
-  const card=curCard(),f=resolveFx((side<0?card.L:card.R)[1]),before={...S.g},out={res:f.res||'',end:null,stageUp:false,lucky:f.lucky};
+  const card=curCard(),f=resolveFx((side<0?card.L:card.R)[1]),before={...S.g},out={res:(f.charm?'🍀 <b>행운 부적 발동!</b> ':'')+(f.res||''),end:null,stageUp:false,lucky:f.lucky};if(f.lucky)S.flags.lucky=(S.flags.lucky||0)+1;if(f.item){giveItem(f.item);out.item=f.item}
   for(const k of GK)if(f[k])S.g[k]+=f[k];
   if(f.hp)S.hp+=f.hp;if(f.v)S.v*=f.v;
   if(f.set)S.flags[f.set]=1;if(f.inc)S.flags[f.inc]=(S.flags[f.inc]||0)+1;if(f.clr)S.flags[f.clr]=0;
@@ -469,15 +538,20 @@ function apply(side){
   if(f.end)out.end=f.end;
   // 한 달이 흐른다
   S.m++;
-  S.g.c-=S.stage>=3?1.5:1;S.g.u-=.6;
-  const gr=.052+(S.g.u-50)/700+(S.g.i-50)/1400+(S.g.t-50)/2000+(R()-.5)*.03;S.v*=Math.exp(clamp(gr,-.04,.09));
+  S.g.c-=S.stage>=3?1.7:1.2;S.g.u-=.7;
+  const gr=.047+(S.g.u-50)/700+(S.g.i-50)/1400+(S.g.t-50)/2000+(R()-.5)*.03;S.v*=Math.exp(clamp(gr,-.04,.09));
   S.hp=Math.min(S.hpMax,S.hp+1.5);
   for(const k of GK)S.g[k]=Math.round(clamp(S.g[k],0,100)*10)/10;
   out.d={};for(const k of GK)out.d[k]=S.g[k]-before[k];
-  if(!out.end){for(const k of GK){if(S.g[k]<=0)out.end=G_END[k][0];else if(S.g[k]>=100)out.end=G_END[k][1];if(out.end)break}}
+  if(!out.end){for(const k of GK){if(S.g[k]<=0)out.end=G_END[k][0];else if(S.g[k]>=100)out.end=G_END[k][1];if(out.end){if(S.items.life>0){S.items.life--;out.saved=k;S.g[k]=S.g[k]<=0?30:70;out.d[k]=S.g[k]-before[k];out.end=null;continue}break}}}
+  if(GK.some(k=>S.g[k]<25||S.g[k]>75)&&S.m<=24)S.flags.unbal=1;
+  if(!out.end&&S.m%12===0){const n=GK.filter(k=>S.g[k]>=30&&S.g[k]<=70).length;out.year={y:S.m/12,n,bonus:n===4?'완벽한 균형! 기업가치 +6%, 아이템 획득':n===3?'안정적인 한 해. 기업가치 +3%':'불안한 한 해였습니다. 보너스 없음'};
+    if(n===4){S.v*=1.06;const it=pick(Object.keys(ITEMS));giveItem(it);out.year.item=it}else if(n===3)S.v*=1.03}
+  if(!out.end){out.mis=[];for(const id of S.mis){const M=MISSIONS.find(x=>x.id===id);if(!S.misDone[id]&&M&&M.chk()){S.misDone[id]=1;META.stars++;const it=pick(['luck','card']);giveItem(it);out.mis.push({t:M.t,it})}}if(out.mis.length)saveMeta()}
   if(!out.end&&S.hp<=0)out.end='burnout';
   if(out.end){S.over=out.end;finishRun(out.end)}else S.cur=pickNext();
   return out}
+function skipCard(){if(!S||S.dyn||!(S.items.card>0))return false;S.items.card--;S.cur=pickNext();saveRun();return true}
 function finishRun(id){const good=ENDS[id].good;const firstTime=!META.ends[id];META.ends[id]=(META.ends[id]||0)+1;
   if(good&&S.v>META.best)META.best=S.v;if(S.m>META.bestM)META.bestM=S.m;S.endInfo={id,firstTime,v:S.v,m:S.m,stage:S.stage};saveMeta();ls.del(KEY_RUN)}
 function preview(side){const card=curCard(),fx=(side<0?card.L:card.R)[1],o={};
@@ -525,10 +599,12 @@ function tTitle(){const saved=ls.get(KEY_RUN);const found=Object.keys(META.ends)
     <h1 class="logo">스타트업<span>생존기</span></h1>
     <p class="tagline">카드 한 장, 결정 하나. 현금·팀·고객·투자자 사이에서 균형을 잡고 상장까지 살아남으세요.</p>
     <div class="menu">${saved?`<button class="btn main" id="bCont">이어하기 · ${esc(saved.co)} ${saved.m}개월차</button><button class="btn" id="bNew">새로 창업</button>`:`<button class="btn main" id="bNew">창업하기</button>`}
-     <div class="menu-row"><button class="btn sm" id="bBook">엔딩 도감 ${found}/${total}</button><button class="btn sm" id="bHow">플레이 방법</button></div></div>
-    <div class="records"><span>창업 <b>${META.runs}</b>회</span><span>최장 생존 <b>${META.bestM}</b>개월</span><span>최고 엑싯 <b>${META.best?fmtV(META.best):'–'}</b></span></div>
+     <div class="menu-row"><button class="btn sm" id="bBook">엔딩 도감 ${found}/${total}</button><button class="btn sm" id="bHow">플레이 방법</button></div>
+     <a class="btn sm classic" href="classic.html">클래식 플레이 · 세부 경영 시뮬레이션</a></div>
+    <div class="records"><span>창업 <b>${META.runs}</b>회</span><span>최장 생존 <b>${META.bestM}</b>개월</span><span>최고 엑싯 <b>${META.best?fmtV(META.best):'–'}</b></span><span>목표 달성 <b>★ ${META.stars||0}</b></span></div>
    </div></div>`;
-  on('#bNew',()=>go('setup'));on('#bCont',()=>{S=saved;go('game')});on('#bBook',()=>go('book'));on('#bHow',howto);on('#bSet',settings)}
+  on('#bNew',()=>go('setup'));on('#bCont',()=>{S=fixRun(saved);go('game')});on('#bBook',()=>go('book'));on('#bHow',howto);on('#bSet',settings)}
+function fixRun(r){r.items=r.items||{luck:0,life:0,card:0};if(!r.mis)r.mis=MISSIONS.slice().sort(()=>R()-.5).slice(0,3).map(m=>m.id);r.misDone=r.misDone||{};r.goldSeen=r.goldSeen||0;return r}
 function on(sel,fn){const el=app.querySelector(sel)||document.querySelector(sel);if(el)el.onclick=e=>{sfx('tap');fn(e)}}
 
 const CO_A=['새싹','반딧불','달빛','오늘','모아','한입','지구','노을','바로','두잇','온기','파도'],CO_B=['랩','컴퍼니','스튜디오','웍스','테크','플랫폼','마켓','AI'];
@@ -544,28 +620,33 @@ function tSetup(){const P=perks();
     <button class="btn main" id="bGo">창업한다</button></div></div>`;
   on('#bBack',()=>go('title'));on('#dCo',()=>{document.getElementById('iCo').value=pick(CO_A)+pick(CO_B)});on('#dCeo',()=>{document.getElementById('iCeo').value=pick(CEO_N)});
   app.querySelectorAll('[data-ind]').forEach(b=>b.onclick=()=>{sfx('tap');SETUP.ind=b.dataset.ind;app.querySelectorAll('[data-ind]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
-  on('#bGo',()=>{const co=document.getElementById('iCo').value.trim()||'새싹랩',ceo=document.getElementById('iCeo').value.trim()||'대표';newRun(co,ceo,SETUP.ind);go('game');if(!META.howto){META.howto=1;saveMeta()}})}
+  on('#bGo',()=>{const co=document.getElementById('iCo').value.trim()||'새싹랩',ceo=document.getElementById('iCeo').value.trim()||'대표';newRun(co,ceo,SETUP.ind);go('game');if(!META.howto){META.howto=1;saveMeta()}setTimeout(()=>missions(true),450)})}
 
 /* ---------- 게임 화면 ---------- */
 const fillQ=q=>q.replace(/\{co\}/g,S.co);
 function gaugeHTML(k){return `<div class="g" id="g-${k}"><i class="dot"></i><svg viewBox="0 0 24 24" aria-hidden="true"><defs><clipPath id="cl-${k}"><rect x="-2" width="28" height="28" y="${24*(1-S.g[k]/100)}"/></clipPath></defs><use href="#ic-${k}" class="dim"/><g clip-path="url(#cl-${k})"><use href="#ic-${k}" class="lit"/></g></svg><span>${GN[k]}</span></div>`}
 function tGame(){
-  app.innerHTML=`<div class="screen" id="gameScr"><div class="top"><button class="iconbtn" id="bMenu" aria-label="메뉴">${ICON_MENU}</button><div class="gauges" role="group" aria-label="회사 상태">${GK.map(gaugeHTML).join('')}</div><span></span></div>
+  app.innerHTML=`<div class="screen" id="gameScr"><div class="top"><button class="iconbtn" id="bMenu" aria-label="메뉴">${ICON_MENU}</button><div class="gauges" role="group" aria-label="회사 상태">${GK.map(gaugeHTML).join('')}</div><button class="iconbtn mis" id="bMis" aria-label="이번 창업 목표"><span id="misN"></span></button></div>
    <div class="status"><span class="stage" id="sStage"></span><span class="prog" title="다음 투자 라운드까지"><i id="sProg"></i></span><span class="mono" id="sMonth"></span><span class="val" id="sVal"></span></div>
+   <div class="items" id="items"></div>
    <div class="ask" aria-live="polite"><p id="ask"></p></div>
    <div class="table" id="table"><div class="deck b"></div><div class="deck"></div><div class="toast" id="toast" role="status"></div></div>
    <div class="choices"><button class="choice" id="cL"><span class="ar">◀</span><span id="lL"></span></button><button class="choice r" id="cR"><span id="lR"></span><span class="ar">▶</span></button></div>
    <div class="foot"><span id="fWho"></span><span>${esc(S.co)} · ${esc(S.ceo)} 대표</span></div></div>`;
-  on('#bMenu',pauseMenu);document.getElementById('cL').onclick=()=>commit(-1);document.getElementById('cR').onclick=()=>commit(1);
+  on('#bMenu',pauseMenu);on('#bMis',()=>missions(false));document.getElementById('cL').onclick=()=>commit(-1);document.getElementById('cR').onclick=()=>commit(1);
   status();for(const k of GK)warnG(k);dealCard()}
-function status(){document.getElementById('sStage').textContent=S.stage>=5&&S.v>=IPO_AT?'상장 준비':STAGES[S.stage];
+function itemsBar(){const el=document.getElementById('items');if(!el)return;const I=S.items;
+  el.innerHTML=Object.keys(ITEMS).filter(k=>I[k]>0).map(k=>k==='card'?`<button class="itm use" id="bSkip" title="${ITEMS[k].d}" aria-label="${ITEMS[k].n} ${I[k]}개, 눌러서 카드 넘기기">${ITEMS[k].e} 카드 넘기기 ×${I[k]}</button>`:`<span class="itm" title="${ITEMS[k].n}: ${ITEMS[k].d}" aria-label="${ITEMS[k].n} ${I[k]}개">${ITEMS[k].e} ×${I[k]}</span>`).join('');
+  const b=document.getElementById('bSkip');if(b)b.onclick=()=>{if(LOCK)return;if(S.dyn){toast('투자 라운드와 상장 카드는 넘길 수 없습니다.');return}const el2=document.getElementById('card');if(!skipCard())return;LOCK=true;sfx('swipe');el2.style.transition='transform .3s,opacity .3s';el2.style.transform='translateY(-120%) rotate(-6deg)';el2.style.opacity='0';setTimeout(()=>{el2.remove();itemsBar();dealCard()},300)};
+  const n=S.mis.filter(id=>S.misDone[id]).length;const mn=document.getElementById('misN');if(mn)mn.textContent=`★${n}/3`}
+function status(){itemsBar();document.getElementById('sStage').textContent=S.stage>=5&&S.v>=IPO_AT?'상장 준비':STAGES[S.stage];
   const tgt=S.stage<5?ROUND_AT[S.stage]:IPO_AT,prev=S.stage>0?ROUND_AT[S.stage-1]:2;const pr=clamp(Math.log(S.v/prev)/Math.log(tgt/prev),0,1);
   document.getElementById('sProg').style.width=(pr*100)+'%';document.getElementById('sMonth').textContent=`${S.m+1}개월차`;document.getElementById('sVal').textContent=fmtV(S.v)}
 let LOCK=false;
 function dealCard(){const c=curCard(),P=CH[c.who];document.getElementById('ask').textContent=fillQ(c.q);
   document.getElementById('lL').textContent=c.L[0];document.getElementById('lR').textContent=c.R[0];document.getElementById('fWho').textContent=`${P.n} · ${P.r}`;
-  const el=document.createElement('div');el.className='card enter';el.id='card';el.tabIndex=0;el.setAttribute('aria-label',`${P.n}의 카드. 왼쪽: ${c.L[0]}, 오른쪽: ${c.R[0]}`);
-  el.innerHTML=`<div class="art">${portrait(c.who,c.m)}</div><div class="opt l">${esc(c.L[0])}</div><div class="opt r">${esc(c.R[0])}</div><div class="who"><b>${esc(P.n)}</b><small>${esc(P.r)}</small></div>`;
+  const el=document.createElement('div');el.className='card enter'+(c.gold?' gold':'');if(c.gold){setTimeout(()=>{sfx('lucky');buzz([10,30,10])},200)}el.id='card';el.tabIndex=0;el.setAttribute('aria-label',`${P.n}의 카드. 왼쪽: ${c.L[0]}, 오른쪽: ${c.R[0]}`);
+  el.innerHTML=`<div class="art">${portrait(c.who,c.m)}</div><div class="opt l">${esc(c.L[0])}</div><div class="opt r">${esc(c.R[0])}</div><div class="who"><b>${esc(P.n)}</b><small>${esc(P.r)}</small></div>${c.gold?'<span class="goldtag">황금 카드</span>':''}`;
   document.getElementById('table').appendChild(el);drag(el);LOCK=false}
 function dots(pv){for(const k of GK){const d=document.querySelector(`#g-${k} .dot`);if(!d)continue;const x=pv&&pv[k];d.className='dot'+(x?' '+x.size+(x.q?' q':''):'')}}
 function drag(el){let sx=0,dx=0,t0=0,id=null;const W=()=>el.offsetWidth;
@@ -584,22 +665,25 @@ function commit(side){if(LOCK||!S||S.over)return;LOCK=true;const el=document.get
   const r=apply(side);saveRun();
   let any=0;for(const k of GK){const d=r.d[k];if(Math.abs(d)>=1.5){any=1;tweenG(k,d)}else setG(k)}
   if(any){const up=GK.reduce((a,k)=>a+r.d[k],0)>=0;setTimeout(()=>sfx(up?'up':'down'),120)}
-  if(r.res){setTimeout(()=>{toast(r.res);if(r.lucky!=null)sfx(r.lucky?'lucky':'down')},260)}
+  const msgs=[];if(r.res)msgs.push(r.res);if(r.item)msgs.push(`${ITEMS[r.item].e} <b>${ITEMS[r.item].n}</b> 획득!`);if(r.saved)msgs.push(`🛟 <b>구명조끼 발동!</b> ${GN[r.saved]} 위기를 넘겼습니다.`);
+  for(const m of r.mis||[])msgs.push(`★ <b>목표 달성</b> · ${esc(m.t)}<br>${ITEMS[m.it].e} ${ITEMS[m.it].n} 획득`);
+  if(msgs.length){setTimeout(()=>{toast(msgs.join('<br>'),(r.mis&&r.mis.length)||r.saved?'gold':'');if(r.mis&&r.mis.length){sfx('stage');buzz([15,30,15])}else if(r.saved)sfx('lucky');else if(r.lucky!=null)sfx(r.lucky?'lucky':'down')},260)}
   setTimeout(()=>{el.remove();status();
     if(r.end){endFlow(r.end);return}
-    if(r.stageUp){celebrate(r.stageUp,`${S.co}의 기업가치 ${fmtV(S.v)}. 투자금이 입금됐습니다.`,dealCard);return}
-    dealCard()},360)}
+    const q=[];if(r.stageUp)q.push(n=>celebrate('투자 유치 완료',r.stageUp,`${S.co}의 기업가치 ${fmtV(S.v)}. 투자금이 입금됐습니다.`,n,true));
+    if(r.year)q.push(n=>celebrate(`${r.year.y}년차 결산`,`${r.year.n===4?'완벽한 한 해':r.year.n===3?'괜찮은 한 해':'버텨낸 한 해'}`,`균형 잡힌 게이지 ${r.year.n}/4 · ${r.year.bonus}${r.year.item?` (${ITEMS[r.year.item].e} ${ITEMS[r.year.item].n})`:''}`,n,r.year.n===4));
+    const run=()=>{const f=q.shift();if(f)f(()=>{status();run()});else dealCard()};run()},360)}
 function setG(k){const rc=document.querySelector(`#cl-${k} rect`);if(rc)rc.setAttribute('y',24*(1-S.g[k]/100));warnG(k)}
 function warnG(k){const g=document.getElementById('g-'+k);if(g)g.classList.toggle('warn',S.g[k]<=18||S.g[k]>=82)}
 function tweenG(k,d){const g=document.getElementById('g-'+k),rc=document.querySelector(`#cl-${k} rect`);if(!g||!rc)return;const from=parseFloat(rc.getAttribute('y')),to=24*(1-S.g[k]/100),t0=performance.now();
   g.classList.remove('up','down');void g.offsetWidth;g.classList.add(d>0?'up':'down');
   const st=ts=>{const p=Math.min(1,(ts-t0)/520),e=1-Math.pow(1-p,3);rc.setAttribute('y',from+(to-from)*e);if(p<1)requestAnimationFrame(st)};requestAnimationFrame(st);
   setTimeout(()=>{g.classList.remove('up','down');warnG(k)},900)}
-let toastT=0;function toast(html){const t=document.getElementById('toast');if(!t)return;t.innerHTML=html;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+let toastT=0;function toast(html,cls=''){const t=document.getElementById('toast');if(!t)return;t.innerHTML=html;t.className='toast on '+cls;clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400+html.length*12)}
 function confetti(){const box=document.createElement('div');box.className='confetti';const cols=['#f5b841','#5fd8ab','#ff6f6f','#8fa8ff','#ffffff'];
   box.innerHTML=Array.from({length:60},()=>`<i style="left:${Math.random()*100}%;background:${pick(cols)};animation-delay:${Math.random()*.8}s;animation-duration:${1.8+Math.random()*1.4}s"></i>`).join('');document.body.appendChild(box);setTimeout(()=>box.remove(),3600)}
-function celebrate(title,sub,then){sfx('stage');buzz([20,40,20]);confetti();const d=document.createElement('div');d.className='celebrate';
-  d.innerHTML=`<div class="box"><span class="eyebrow">투자 유치 완료</span><h2>${esc(title)}</h2><p>${esc(sub)}</p><button class="btn main" id="bCel">계속</button></div>`;document.body.appendChild(d);
+function celebrate(eb,title,sub,then,party){sfx(party?'stage':'tap');if(party){buzz([20,40,20]);confetti()}const d=document.createElement('div');d.className='celebrate';
+  d.innerHTML=`<div class="box"><span class="eyebrow">${esc(eb)}</span><h2>${esc(title)}</h2><p>${esc(sub)}</p><button class="btn main" id="bCel">계속</button></div>`;document.body.appendChild(d);
   const b=d.querySelector('#bCel');b.focus();b.onclick=()=>{sfx('tap');d.remove();then()}}
 
 /* ---------- 엔딩 ---------- */
@@ -625,6 +709,9 @@ function tBook(){const ids=Object.keys(ENDS),found=ids.filter(i=>META.ends[i]).l
 /* ---------- 시트 ---------- */
 function sheet(html,bind){const d=document.createElement('div');d.className='sheet';d.innerHTML=`<div class="in" role="dialog" aria-modal="true">${html}</div>`;document.body.appendChild(d);
   d.onclick=e=>{if(e.target===d)d.remove()};bind(d,()=>d.remove());const f=d.querySelector('button');if(f)f.focus()}
+function missions(intro){sheet(`<h3>${intro?'이번 창업의 목표':'목표'}</h3><p class="howto">달성할 때마다 ★과 아이템을 받습니다. 아이템은 위기에서 회사를 구합니다.</p>
+  <div class="mlist">${S.mis.map(id=>{const M=MISSIONS.find(x=>x.id===id);return `<div class="mrow ${S.misDone[id]?'done':''}"><span>${S.misDone[id]?'★':'☆'}</span>${esc(M?M.t:id)}</div>`}).join('')}</div>
+  <div class="mlist">${Object.entries(ITEMS).map(([k,v])=>`<div class="mrow"><span>${v.e}</span><div><b>${v.n}</b> · ${v.d}</div></div>`).join('')}</div><button class="btn main" id="bX">${intro?'시작하기':'닫기'}</button>`,(d,close)=>{d.querySelector('#bX').onclick=close})}
 function settings(){let arm=false;sheet(`<h3>설정</h3><button class="tog" id="tS" aria-pressed="${!!META.sound}">효과음<i></i></button><button class="tog" id="tV" aria-pressed="${!!META.vibe}">진동<i></i></button><button class="btn sm" id="bReset">기록 초기화</button><button class="btn" id="bX">닫기</button>`,(d,close)=>{
   d.querySelector('#tS').onclick=e=>{META.sound=META.sound?0:1;e.currentTarget.setAttribute('aria-pressed',!!META.sound);saveMeta();sfx('tap')};
   d.querySelector('#tV').onclick=e=>{META.vibe=META.vibe?0:1;e.currentTarget.setAttribute('aria-pressed',!!META.vibe);saveMeta();buzz(20)};
@@ -633,7 +720,7 @@ function settings(){let arm=false;sheet(`<h3>설정</h3><button class="tog" id="
 function howto(){sheet(`<h3>플레이 방법</h3><p class="howto">카드를 <b>왼쪽</b>이나 <b>오른쪽</b>으로 밀어 결정합니다. 아래 버튼을 눌러도 되고, 키보드 ← → 도 됩니다.</p>
   <p class="howto">위의 네 아이콘은 <b>현금 · 팀 · 고객 · 투자자</b>입니다. 카드를 밀기 시작하면 영향을 받는 아이콘 위에 점이 뜹니다. 큰 점은 큰 변화, 속이 빈 점은 운에 달린 변화입니다.</p>
   <p class="howto">어느 하나라도 <b>바닥나거나 꽉 차면</b> 게임이 끝납니다. 돈이 넘쳐도, 투자자 입김이 너무 세도 위험합니다. 매달 고정비로 현금이 조금씩 줄어듭니다.</p>
-  <p class="howto">기업가치가 오르면 <b>투자 라운드</b>가 열리고, Pre-IPO 이후 기업가치 ${fmtV(IPO_AT)}을 넘기면 <b>상장</b>에 도전할 수 있습니다. 엔딩은 모두 ${Object.keys(ENDS).length}가지입니다.</p><button class="btn main" id="bX">알겠어요</button>`,(d,close)=>{d.querySelector('#bX').onclick=close})}
+  <p class="howto">기업가치가 오르면 <b>투자 라운드</b>가 열리고, Pre-IPO 이후 기업가치 ${fmtV(IPO_AT)}을 넘기고 네 게이지가 모두 건강하면(20~85) <b>상장</b>에 도전할 수 있습니다. 엔딩은 모두 ${Object.keys(ENDS).length}가지입니다.</p><button class="btn main" id="bX">알겠어요</button>`,(d,close)=>{d.querySelector('#bX').onclick=close})}
 function pauseMenu(){sheet(`<h3>${esc(S.co)} · ${S.m+1}개월차</h3><button class="btn main" id="bX">계속하기</button><button class="btn" id="bHow2">플레이 방법</button><button class="btn" id="bSet2">설정</button><button class="btn sm" id="bHome2">처음 화면으로 (자동 저장됨)</button>`,(d,close)=>{
   d.querySelector('#bX').onclick=close;d.querySelector('#bHow2').onclick=()=>{close();howto()};d.querySelector('#bSet2').onclick=()=>{close();settings()};d.querySelector('#bHome2').onclick=()=>{close();saveRun();go('title')}})}
 
